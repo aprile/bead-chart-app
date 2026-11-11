@@ -6,7 +6,7 @@ import { setupStashScreen } from './stash-screen.js';
 import { setupChartsScreen } from './charts-screen.js';
 import { setupViews } from './views.js';
 import { setupPhotoImport } from './photo.js';
-import { drawGrid } from './grid.js';
+import { setupChartView } from './chart-view.js';
 import { countMissingBeads } from './colors.js';
 import { loadSavedChart, listSavedCharts, getCurrentChartId, setCurrentChartId } from './storage.js';
 import { setupAutosave, saveCurrentChart, flushSave } from './autosave.js';
@@ -20,7 +20,19 @@ const nameInput = document.querySelector('#chart-name');
 const saveStatus = document.querySelector('#save-status');
 const missingNote = document.querySelector('#missing-note');
 
-let layout = null; // bead sizes in pixels, from the last full drawing
+// Zoom, scrolling, grid lines and numbers.
+const chartView = setupChartView({
+  viewport: document.querySelector('#grid-viewport'),
+  spacer: document.querySelector('#grid-spacer'),
+  canvas,
+  toolbar: document.querySelector('.toolbar'),
+  zoomIn: document.querySelector('#zoom-in'),
+  zoomOut: document.querySelector('#zoom-out'),
+  fit: document.querySelector('#zoom-fit'),
+  zoomLabel: document.querySelector('#zoom-label'),
+  gridLines: document.querySelector('#show-grid-lines'),
+  numbers: document.querySelector('#show-numbers'),
+});
 
 let views = null; // set up at the bottom, once the chart exists
 
@@ -29,7 +41,7 @@ function redraw() {
   // Switching to the chart view calls redraw() again.
   if (!views || !views.isShowing('chart')) return;
   const current = chart.getChart();
-  layout = drawGrid(canvas, current);
+  chartView.render(current);
   palette.show(current.beadSize); // the bead size or stash may have changed
   updateButtons();
   updateMissingNote();
@@ -62,7 +74,7 @@ const panel = setupNewChartPanel(document.querySelector('#new-chart-form'), {
 const palette = setupPalette(document.querySelector('#palette'));
 
 setupPainting(canvas, {
-  getLayout: () => layout,
+  getLayout: () => chartView.getLayout(),
   getColorId: () => palette.getSelectedColorId(),
   onStrokeEnd() {
     updateButtons();
@@ -77,6 +89,7 @@ function showOpenChart() {
   const current = chart.getChart();
   panel.showChart(current);
   nameInput.value = current.name;
+  chartView.scrollToStart(); // a different chart starts at the top left
   redraw();
 }
 

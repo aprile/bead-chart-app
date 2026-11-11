@@ -77,13 +77,27 @@
           <button type="button" id="photo-button">Import photo…</button>
           <input type="file" id="photo-file" accept="image/*" hidden />
         </div>
+        <!-- How the chart is shown (src/chart-view.js) -->
+        <div class="view-controls">
+          <div class="zoom-controls">
+            <button type="button" id="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
+            <span id="zoom-label" class="zoom-label" title="Cmd + scroll or pinch to zoom">100%</span>
+            <button type="button" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+            <button type="button" id="zoom-fit" title="Show the whole chart">Fit to screen</button>
+          </div>
+          <label class="toggle"><input type="checkbox" id="show-grid-lines" /> Grid lines</label>
+          <label class="toggle"><input type="checkbox" id="show-numbers" /> Row &amp; column numbers</label>
+        </div>
       </div>
 
       <p id="missing-note" class="warning" hidden></p>
 
-      <!-- Scrolls sideways if a chart is ever wider than the screen. -->
-      <div class="grid-wrap">
-        <canvas id="chart-canvas"></canvas>
+      <!-- A scrolling box. The spacer is the size of the whole chart (so the
+           scrollbars are right); the canvas only draws the part you can see. -->
+      <div id="grid-viewport" class="grid-viewport">
+        <div id="grid-spacer" class="grid-spacer">
+          <canvas id="chart-canvas"></canvas>
+        </div>
       </div>
       </section>
 

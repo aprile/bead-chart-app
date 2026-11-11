@@ -3,7 +3,7 @@
 import { beginStroke, paintBead, endStroke, getChart } from './chart.js';
 import { beadAtPoint, drawBead } from './grid.js';
 
-// getLayout()  → the layout from the last drawGrid()
+// getLayout()  → the current layout (bead sizes and scroll position) from chart-view.js
 // getColorId() → the selected colour id, or null for the eraser
 // onStrokeEnd() → called when a drag finishes (to update the undo buttons)
 export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd }) {

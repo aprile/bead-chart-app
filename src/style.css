@@ -37,14 +37,21 @@ body {
   max-width: 640px;
 }
 
-.grid-wrap {
-  margin-top: 24px;
-  overflow-x: auto;
+.grid-viewport {
+  margin-top: 16px;
+  overflow: auto; /* scrollbars when the chart is bigger than the box */
+}
+
+.grid-spacer {
+  margin: 0 auto; /* centred when the chart is narrower than the page */
 }
 
 #chart-canvas {
   display: block;
-  margin: 0 auto;
+  /* Stays in view while the box scrolls; we redraw what's visible. */
+  position: sticky;
+  top: 0;
+  left: 0;
   touch-action: none; /* dragging on a touch screen paints instead of scrolling */
   cursor: crosshair;
 }
@@ -788,4 +795,48 @@ dialog.photo-dialog {
 
 .photo-stage.picking canvas {
   cursor: crosshair;
+}
+
+/* ---- View controls (zoom, grid lines, numbers) ---- */
+
+.view-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  width: 100%;
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.zoom-controls #zoom-in,
+.zoom-controls #zoom-out {
+  width: 32px;
+  padding: 6px 0;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.zoom-label {
+  min-width: 3.5em;
+  text-align: center;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+#zoom-fit[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.view-controls .toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
 }

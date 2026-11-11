@@ -11,6 +11,7 @@ export const STORAGE_KEYS = {
   customColors: `${PREFIX}customColors`,
   overrides: `${PREFIX}colorOverrides`,
   lastChoices: `${PREFIX}lastChoices`,
+  view: `${PREFIX}view`, // zoom, grid lines, numbers
   currentChartId: `${PREFIX}currentChart`,
 };
 
@@ -250,11 +251,13 @@ export function checkBackup(data) {
   return { ok: true, summary: describeData(data) };
 }
 
+// Screen preferences, not data: importing a backup keeps them.
+const KEPT_ON_IMPORT = [STORAGE_KEYS.lastChoices, STORAGE_KEYS.view];
+
 // Replace all my data with a (checked) backup. Returns true if it worked.
 // If it fails halfway (e.g. storage full), the old data is put back.
 export function restoreBackup(data) {
-  // lastChoices is just a form preference, so it's kept.
-  const keysToReplace = allKeys().filter((key) => key.startsWith(PREFIX) && key !== STORAGE_KEYS.lastChoices);
+  const keysToReplace = allKeys().filter((key) => key.startsWith(PREFIX) && !KEPT_ON_IMPORT.includes(key));
   const oldValues = keysToReplace.map((key) => [key, localStorage.getItem(key)]);
 
   try {
@@ -274,7 +277,7 @@ export function restoreBackup(data) {
     console.warn('Import failed, putting the old data back:', error);
     try {
       allKeys()
-        .filter((key) => key.startsWith(PREFIX) && key !== STORAGE_KEYS.lastChoices)
+        .filter((key) => key.startsWith(PREFIX) && !KEPT_ON_IMPORT.includes(key))
         .forEach((key) => localStorage.removeItem(key));
       oldValues.forEach(([key, value]) => localStorage.setItem(key, value));
     } catch (restoreError) {
