@@ -840,3 +840,9 @@ dialog.photo-dialog {
   gap: 6px;
   font-size: 0.875rem;
 }
+
+/* A toggle that can't be used right now (e.g. grid lines on a brick chart) */
+.view-controls .toggle:has(input:disabled) {
+  opacity: 0.45;
+  cursor: default;
+}

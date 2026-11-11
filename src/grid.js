@@ -14,8 +14,9 @@ const MIN_BEAD_PX = 14;
 const MAX_BEAD_PX = 48;
 
 const EMPTY_FILL = '#d6d4d9';
-const BEAD_EDGE = '#b3b0b8';
-const GRID_LINE = '#6f6a77'; // darker than the bead outlines, so the grid stands out
+// Grid lines (loom only): light grey, with every 10th line darker and thicker.
+const GRID_LINE = '#c2bec8';
+const GRID_LINE_10TH = '#8a8592';
 // A colour that no longer exists: white with a red cross, easy to spot.
 const MISSING_FILL = '#ffffff';
 const MISSING_MARK = '#d32f2f';
@@ -70,8 +71,7 @@ export function makeLayout(chart, scale, { originX, originY, clipX, clipBottom, 
     clipX,
     clipBottom,
     numbers,
-    gridLines, // lines between rows and columns, like graph paper
-    outlines: smaller >= 4, // bead outlines (on tiny beads they'd just look grey)
+    gridLines: gridLines && !isBrick, // lines between rows and columns: loom only
     gap: smaller < 6 ? 0 : Math.max(1, smaller * 0.08), // small gap between beads
     radius: smaller * 0.35, // rounded corners
     rounded: smaller >= 5,
@@ -122,22 +122,40 @@ function strokeMissingMarks(ctx, path) {
   ctx.stroke(path);
 }
 
-// The rectangle around a bead's cell, for grid lines. Corners are rounded to
-// whole screen pixels so the lines stay crisp instead of blurry.
-function addCellRect(path, layout, row, col) {
+// Grid lines between the rows and columns in `range` (loom only).
+// Every 10th line, counted from the bottom left like the numbers, is darker.
+// Positions are rounded to whole screen pixels so the lines stay crisp.
+function drawGridLines(ctx, layout, { firstRow, lastRow, firstCol, lastCol }) {
   const snap = (value) => Math.round(value * layout.ratio) / layout.ratio;
-  const cell = cellPosition(layout, row, col);
-  const left = snap(layout.originX + cell.x);
-  const top = snap(layout.originY + cell.y);
-  const right = snap(layout.originX + cell.x + layout.beadW);
-  const bottom = snap(layout.originY + cell.y + layout.beadH);
-  path.rect(left, top, right - left, bottom - top);
-}
+  const { beadW, beadH, originX, originY, rows } = layout;
+  const top = originY + firstRow * beadH;
+  const bottom = originY + (lastRow + 1) * beadH;
+  const left = originX + firstCol * beadW;
+  const right = originX + (lastCol + 1) * beadW;
+  const isTenth = (n) => n > 0 && n % 10 === 0;
 
-function strokeGridLines(ctx, path) {
+  const normal = new Path2D();
+  const tenth = new Path2D();
+  for (let col = firstCol; col <= lastCol + 1; col++) {
+    // the line on the left of column `col`, i.e. after `col` columns
+    const path = isTenth(col) ? tenth : normal;
+    const x = snap(originX + col * beadW);
+    path.moveTo(x, top);
+    path.lineTo(x, bottom);
+  }
+  for (let row = firstRow; row <= lastRow + 1; row++) {
+    // the line above row `row`; counted from the bottom, it's after `rows - row` rows
+    const path = isTenth(rows - row) ? tenth : normal;
+    const y = snap(originY + row * beadH);
+    path.moveTo(left, y);
+    path.lineTo(right, y);
+  }
   ctx.strokeStyle = GRID_LINE;
   ctx.lineWidth = 1;
-  ctx.stroke(path);
+  ctx.stroke(normal);
+  ctx.strokeStyle = GRID_LINE_10TH; // drawn last, so it sits on top where lines cross
+  ctx.lineWidth = 1.5;
+  ctx.stroke(tenth);
 }
 
 // Where the chart area ends at the bottom (the numbers are below it).
@@ -194,8 +212,6 @@ export function drawChart(canvas, chart, layout, cssWidth, cssHeight) {
   // Group the beads by colour into one shape per colour, then fill each
   // shape once. Much faster than filling thousands of beads one by one.
   const shapes = new Map(); // fill colour → Path2D
-  const outlines = new Path2D();
-  const gridLines = new Path2D(); // all cell edges in one shape: shared edges are drawn once
   const missingMarks = new Path2D();
   const { firstRow, lastRow, firstCol, lastCol } = visibleRange(layout);
   for (let row = firstRow; row <= lastRow; row++) {
@@ -204,8 +220,6 @@ export function drawChart(canvas, chart, layout, cssWidth, cssHeight) {
       const fill = fillFor(colorId);
       if (!shapes.has(fill)) shapes.set(fill, new Path2D());
       addBeadShape(shapes.get(fill), layout, row, col);
-      if (layout.outlines) addBeadShape(outlines, layout, row, col);
-      if (layout.gridLines) addCellRect(gridLines, layout, row, col);
       if (isMissingColor(colorId)) addMissingMark(missingMarks, layout, row, col);
     }
   }
@@ -213,12 +227,7 @@ export function drawChart(canvas, chart, layout, cssWidth, cssHeight) {
     ctx.fillStyle = fill;
     ctx.fill(shape);
   }
-  if (layout.outlines) {
-    ctx.strokeStyle = BEAD_EDGE;
-    ctx.lineWidth = 1;
-    ctx.stroke(outlines);
-  }
-  if (layout.gridLines) strokeGridLines(ctx, gridLines);
+  if (layout.gridLines) drawGridLines(ctx, layout, visibleRange(layout));
   strokeMissingMarks(ctx, missingMarks);
   ctx.restore();
 
@@ -288,17 +297,8 @@ export function drawBead(canvas, layout, row, col, colorId) {
   addBeadShape(shape, layout, row, col);
   ctx.fillStyle = fillFor(colorId);
   ctx.fill(shape);
-  if (layout.outlines) {
-    ctx.strokeStyle = BEAD_EDGE;
-    ctx.lineWidth = 1;
-    ctx.stroke(shape);
-  }
   // Clearing the cell also wiped half of its grid lines: draw them again.
-  if (layout.gridLines) {
-    const cellLines = new Path2D();
-    addCellRect(cellLines, layout, row, col);
-    strokeGridLines(ctx, cellLines);
-  }
+  if (layout.gridLines) drawGridLines(ctx, layout, { firstRow: row, lastRow: row, firstCol: col, lastCol: col });
   if (isMissingColor(colorId)) {
     const mark = new Path2D();
     addMissingMark(mark, layout, row, col);

@@ -109,7 +109,11 @@ export function setupChartView(elements) {
     const { width, height } = available();
     const percent = Math.round((scale / autoScale(chart, width, height - margins().bottom)) * 100);
     elements.zoomLabel.textContent = `${percent}%`;
-    elements.gridLines.checked = view.gridLines;
+    // Grid lines are for loom charts only.
+    const isLoom = chart.stitch === 'loom';
+    elements.gridLines.disabled = !isLoom;
+    elements.gridLines.checked = view.gridLines && isLoom;
+    elements.gridLines.parentElement.title = isLoom ? '' : 'Grid lines are only for loom charts';
     elements.numbers.checked = view.numbers;
     elements.fit.setAttribute('aria-pressed', view.zoom === 'fit');
   }
