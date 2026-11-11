@@ -15,6 +15,7 @@ const MAX_BEAD_PX = 48;
 
 const EMPTY_FILL = '#d6d4d9';
 const BEAD_EDGE = '#b3b0b8';
+const GRID_LINE = '#6f6a77'; // darker than the bead outlines, so the grid stands out
 // A colour that no longer exists: white with a red cross, easy to spot.
 const MISSING_FILL = '#ffffff';
 const MISSING_MARK = '#d32f2f';
@@ -51,8 +52,9 @@ export function autoScale(chart, availWidth, availHeight) {
 
 // Everything the drawing needs to know, in CSS pixels.
 // originX/Y: where the chart's top-left corner is on the canvas (moves as you scroll).
-// clipX/Y: beads are hidden left of / above this (that's where the numbers go).
-export function makeLayout(chart, scale, { originX, originY, clipX, clipY, gridLines, numbers }) {
+// clipX: beads are hidden left of this; clipBottom: hidden in this many pixels
+// at the bottom (that's where the row and column numbers go).
+export function makeLayout(chart, scale, { originX, originY, clipX, clipBottom, gridLines, numbers }) {
   const { columnWidth, rowHeight, isBrick } = chartSizeMm(chart);
   const beadW = columnWidth * scale;
   const beadH = rowHeight * scale;
@@ -66,9 +68,10 @@ export function makeLayout(chart, scale, { originX, originY, clipX, clipY, gridL
     originX,
     originY,
     clipX,
-    clipY,
+    clipBottom,
     numbers,
-    gridLines: gridLines && smaller >= 4, // outlines on tiny beads would just look grey
+    gridLines, // lines between rows and columns, like graph paper
+    outlines: smaller >= 4, // bead outlines (on tiny beads they'd just look grey)
     gap: smaller < 6 ? 0 : Math.max(1, smaller * 0.08), // small gap between beads
     radius: smaller * 0.35, // rounded corners
     rounded: smaller >= 5,
@@ -119,19 +122,42 @@ function strokeMissingMarks(ctx, path) {
   ctx.stroke(path);
 }
 
-// Only draw in the chart area, not under the row/column numbers.
+// The rectangle around a bead's cell, for grid lines. Corners are rounded to
+// whole screen pixels so the lines stay crisp instead of blurry.
+function addCellRect(path, layout, row, col) {
+  const snap = (value) => Math.round(value * layout.ratio) / layout.ratio;
+  const cell = cellPosition(layout, row, col);
+  const left = snap(layout.originX + cell.x);
+  const top = snap(layout.originY + cell.y);
+  const right = snap(layout.originX + cell.x + layout.beadW);
+  const bottom = snap(layout.originY + cell.y + layout.beadH);
+  path.rect(left, top, right - left, bottom - top);
+}
+
+function strokeGridLines(ctx, path) {
+  ctx.strokeStyle = GRID_LINE;
+  ctx.lineWidth = 1;
+  ctx.stroke(path);
+}
+
+// Where the chart area ends at the bottom (the numbers are below it).
+function chartBottom(layout) {
+  return layout.height - layout.clipBottom;
+}
+
+// Only draw in the chart area, not on the row/column numbers.
 function clipToChartArea(ctx, layout) {
   ctx.beginPath();
-  ctx.rect(layout.clipX, layout.clipY, layout.width - layout.clipX, layout.height - layout.clipY);
+  ctx.rect(layout.clipX, 0, layout.width - layout.clipX, chartBottom(layout));
   ctx.clip();
 }
 
 // Which rows and columns can be seen on the canvas right now.
 function visibleRange(layout) {
-  const { beadW, beadH, originX, originY, clipX, clipY, width, height } = layout;
+  const { beadW, beadH, originX, originY, clipX, width } = layout;
   return {
-    firstRow: Math.max(0, Math.floor((clipY - originY) / beadH)),
-    lastRow: Math.min(layout.rows - 1, Math.floor((height - originY) / beadH)),
+    firstRow: Math.max(0, Math.floor(-originY / beadH)),
+    lastRow: Math.min(layout.rows - 1, Math.floor((chartBottom(layout) - originY) / beadH)),
     // one extra column on the left, for brick rows shifted by half a bead
     firstCol: Math.max(0, Math.floor((clipX - originX) / beadW) - 1),
     lastCol: Math.min(layout.cols - 1, Math.floor((width - originX) / beadW)),
@@ -169,6 +195,7 @@ export function drawChart(canvas, chart, layout, cssWidth, cssHeight) {
   // shape once. Much faster than filling thousands of beads one by one.
   const shapes = new Map(); // fill colour → Path2D
   const outlines = new Path2D();
+  const gridLines = new Path2D(); // all cell edges in one shape: shared edges are drawn once
   const missingMarks = new Path2D();
   const { firstRow, lastRow, firstCol, lastCol } = visibleRange(layout);
   for (let row = firstRow; row <= lastRow; row++) {
@@ -177,7 +204,8 @@ export function drawChart(canvas, chart, layout, cssWidth, cssHeight) {
       const fill = fillFor(colorId);
       if (!shapes.has(fill)) shapes.set(fill, new Path2D());
       addBeadShape(shapes.get(fill), layout, row, col);
-      if (layout.gridLines) addBeadShape(outlines, layout, row, col);
+      if (layout.outlines) addBeadShape(outlines, layout, row, col);
+      if (layout.gridLines) addCellRect(gridLines, layout, row, col);
       if (isMissingColor(colorId)) addMissingMark(missingMarks, layout, row, col);
     }
   }
@@ -185,28 +213,31 @@ export function drawChart(canvas, chart, layout, cssWidth, cssHeight) {
     ctx.fillStyle = fill;
     ctx.fill(shape);
   }
-  if (layout.gridLines) {
+  if (layout.outlines) {
     ctx.strokeStyle = BEAD_EDGE;
     ctx.lineWidth = 1;
     ctx.stroke(outlines);
   }
+  if (layout.gridLines) strokeGridLines(ctx, gridLines);
   strokeMissingMarks(ctx, missingMarks);
   ctx.restore();
 
   if (layout.numbers) drawNumbers(ctx, layout);
 }
 
-// Row numbers down the left, column numbers along the top. They stay at the
-// edges while you scroll, so you can always see where you are.
+// Numbers start at the BOTTOM LEFT: row 1 is the bottom row, column 1 the
+// left column. Row numbers run down the left edge, column numbers along the
+// bottom. They stay at the edges while you scroll.
 function drawNumbers(ctx, layout) {
   const styles = getComputedStyle(document.documentElement);
   const background = styles.getPropertyValue('--bg').trim() || '#ffffff';
   const textColor = styles.getPropertyValue('--muted').trim() || '#666666';
-  const { clipX: left, clipY: top, width, height, beadW, beadH, originX, originY } = layout;
+  const { clipX: left, width, height, beadW, beadH, originX, originY, rows } = layout;
+  const bottom = chartBottom(layout); // top edge of the column-number strip
   const { firstRow, lastRow, firstCol, lastCol } = visibleRange(layout);
 
   ctx.fillStyle = background;
-  ctx.fillRect(0, 0, width, top);
+  ctx.fillRect(0, bottom, width, height - bottom);
   ctx.fillRect(0, 0, left, height);
 
   // Small beads: only label every 5th or 10th so the numbers don't overlap.
@@ -218,24 +249,28 @@ function drawNumbers(ctx, layout) {
   ctx.font = '11px system-ui, sans-serif';
   ctx.textBaseline = 'middle';
 
+  // Column numbers line up with the bottom row (row 1), which in brick
+  // stitch may be one of the shifted rows.
+  const bottomRowShift = layout.isBrick && (rows - 1) % 2 === 1 ? beadW / 2 : 0;
   ctx.save();
   ctx.beginPath();
-  ctx.rect(left, 0, width - left, top);
+  ctx.rect(left, bottom, width - left, height - bottom);
   ctx.clip();
   ctx.textAlign = 'center';
   for (let col = firstCol; col <= lastCol; col++) {
-    // Columns line up with the unshifted rows (row 1, 3, 5… in brick stitch).
-    if (shows(col + 1, colEvery)) ctx.fillText(col + 1, originX + col * beadW + beadW / 2, top / 2);
+    const x = originX + bottomRowShift + col * beadW + beadW / 2;
+    if (shows(col + 1, colEvery)) ctx.fillText(col + 1, x, (bottom + height) / 2);
   }
   ctx.restore();
 
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, top, left, height - top);
+  ctx.rect(0, 0, left, bottom);
   ctx.clip();
   ctx.textAlign = 'right';
   for (let row = firstRow; row <= lastRow; row++) {
-    if (shows(row + 1, rowEvery)) ctx.fillText(row + 1, left - 6, originY + row * beadH + beadH / 2);
+    const number = rows - row; // counted from the bottom
+    if (shows(number, rowEvery)) ctx.fillText(number, left - 6, originY + row * beadH + beadH / 2);
   }
   ctx.restore();
 }
@@ -253,10 +288,16 @@ export function drawBead(canvas, layout, row, col, colorId) {
   addBeadShape(shape, layout, row, col);
   ctx.fillStyle = fillFor(colorId);
   ctx.fill(shape);
-  if (layout.gridLines) {
+  if (layout.outlines) {
     ctx.strokeStyle = BEAD_EDGE;
     ctx.lineWidth = 1;
     ctx.stroke(shape);
+  }
+  // Clearing the cell also wiped half of its grid lines: draw them again.
+  if (layout.gridLines) {
+    const cellLines = new Path2D();
+    addCellRect(cellLines, layout, row, col);
+    strokeGridLines(ctx, cellLines);
   }
   if (isMissingColor(colorId)) {
     const mark = new Path2D();
@@ -270,7 +311,7 @@ export function drawBead(canvas, layout, row, col, colorId) {
 // Returns { row, col }, or null if the point isn't on a bead
 // (e.g. on the numbers, or the empty half-bead at the end of a brick row).
 export function beadAtPoint(layout, x, y) {
-  if (x < layout.clipX || y < layout.clipY) return null;
+  if (x < layout.clipX || y > chartBottom(layout)) return null;
   const chartX = x - layout.originX;
   const chartY = y - layout.originY;
   const row = Math.floor(chartY / layout.beadH);

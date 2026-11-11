@@ -11,16 +11,16 @@ import { load, save, STORAGE_KEYS } from './storage.js';
 const ZOOM_STEP = 1.25; // each + or − button press
 const MIN_BEAD_PX = 3; // smallest/biggest bead when zooming (shorter side)
 const MAX_BEAD_PX = 160;
-const NUMBERS_SPACE = { left: 36, top: 22 }; // room for row/column numbers
+const NUMBERS_SPACE = { left: 36, bottom: 22 }; // room for row numbers (left) and column numbers (bottom)
 
-// Saved shape: { zoom: null | "fit" | pixels per mm, gridLines: true, numbers: false }
+// Saved shape: { zoom: null | "fit" | pixels per mm, gridLines: false, numbers: false }
 // zoom null = the starting size; "fit" = always fit the whole chart.
 function loadView() {
   const saved = load(STORAGE_KEYS.view);
   const zoom = saved?.zoom;
   return {
     zoom: zoom === 'fit' || (typeof zoom === 'number' && zoom > 0) ? zoom : null,
-    gridLines: saved?.gridLines ?? true,
+    gridLines: saved?.gridLines ?? false,
     numbers: saved?.numbers ?? false,
   };
 }
@@ -41,7 +41,7 @@ export function setupChartView(elements) {
   }
 
   function margins() {
-    return view.numbers ? NUMBERS_SPACE : { left: 0, top: 0 };
+    return view.numbers ? NUMBERS_SPACE : { left: 0, bottom: 0 };
   }
 
   // Room for the chart: the page width, and the window height below the toolbar.
@@ -61,7 +61,7 @@ export function setupChartView(elements) {
 
   function chooseScale() {
     const { width, height } = available();
-    const space = height - margins().top;
+    const space = height - margins().bottom;
     if (view.zoom === 'fit') return fitScale(chart, width, space);
     if (typeof view.zoom === 'number') return clampScale(view.zoom);
     return autoScale(chart, width, space);
@@ -74,7 +74,7 @@ export function setupChartView(elements) {
     scale = chooseScale();
     const size = chartSizeMm(chart);
     const m = margins();
-    content = { width: size.widthMm * scale + m.left, height: size.heightMm * scale + m.top };
+    content = { width: size.widthMm * scale + m.left, height: size.heightMm * scale + m.bottom };
     spacer.style.width = `${content.width}px`;
     spacer.style.height = `${content.height}px`;
 
@@ -94,9 +94,9 @@ export function setupChartView(elements) {
     const m = margins();
     layout = makeLayout(chart, scale, {
       originX: m.left - viewport.scrollLeft,
-      originY: m.top - viewport.scrollTop,
+      originY: -viewport.scrollTop,
       clipX: m.left,
-      clipY: m.top,
+      clipBottom: m.bottom,
       gridLines: view.gridLines,
       numbers: view.numbers,
     });
@@ -107,7 +107,7 @@ export function setupChartView(elements) {
 
   function updateControls() {
     const { width, height } = available();
-    const percent = Math.round((scale / autoScale(chart, width, height - margins().top)) * 100);
+    const percent = Math.round((scale / autoScale(chart, width, height - margins().bottom)) * 100);
     elements.zoomLabel.textContent = `${percent}%`;
     elements.gridLines.checked = view.gridLines;
     elements.numbers.checked = view.numbers;
@@ -119,13 +119,13 @@ export function setupChartView(elements) {
     const m = margins();
     // Which spot of the chart (in mm) is under the anchor now?
     const mmX = (anchor.x + viewport.scrollLeft - m.left) / scale;
-    const mmY = (anchor.y + viewport.scrollTop - m.top) / scale;
+    const mmY = (anchor.y + viewport.scrollTop) / scale;
     view.zoom = clampScale(newScale);
     saveView();
     render();
     // Scroll so that same spot is under the anchor again.
     viewport.scrollLeft = mmX * scale + m.left - anchor.x;
-    viewport.scrollTop = mmY * scale + m.top - anchor.y;
+    viewport.scrollTop = mmY * scale - anchor.y;
     paint();
   }
 
