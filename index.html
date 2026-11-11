@@ -8,8 +8,15 @@
   </head>
   <body>
     <main id="app">
-      <h1>Bead Chart</h1>
+      <header class="app-header">
+        <h1>Bead Chart</h1>
+        <nav class="view-switch" aria-label="Views">
+          <a href="#chart">Chart</a>
+          <a href="#stash">My stash</a>
+        </nav>
+      </header>
 
+      <section id="chart-view">
       <form id="new-chart-form" class="panel">
         <h2>New chart</h2>
 
@@ -51,7 +58,7 @@
       </form>
 
       <div class="toolbar">
-        <!-- Temporary colours; filled in by src/palette.js -->
+        <!-- Stash colours; filled in by src/palette.js -->
         <div id="palette" class="palette" aria-label="Colours"></div>
         <div class="actions">
           <button type="button" id="undo-button" title="Undo (⌘Z)">Undo</button>
@@ -64,6 +71,43 @@
       <div class="grid-wrap">
         <canvas id="chart-canvas"></canvas>
       </div>
+      </section>
+
+      <section id="stash-view" hidden>
+        <h2>My stash</h2>
+        <p class="note">Screen colours are rough guesses from the colour names.</p>
+        <p id="stash-counts" class="stash-counts"></p>
+
+        <div class="stash-filters">
+          <label>
+            Search
+            <input type="search" id="stash-search" placeholder="Code or name" />
+          </label>
+          <label>
+            Size
+            <select id="stash-size">
+              <option value="">All</option>
+              <option value="11/0">11/0</option>
+              <option value="15/0">15/0</option>
+            </select>
+          </label>
+          <label>
+            Colour family
+            <select id="stash-family"><option value="">All</option></select>
+          </label>
+          <label>
+            Finish
+            <select id="stash-finish"><option value="">All</option></select>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="stash-only" /> Show only my stash
+          </label>
+        </div>
+
+        <p id="stash-showing" class="note"></p>
+        <!-- Filled in by src/stash-screen.js -->
+        <ul id="stash-list" class="stash-list"></ul>
+      </section>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -1,56 +1,65 @@
-// TEMPORARY palette of a few colours, until the stash palette in milestone 4.
+// The palette above the chart: my stash colours in the chart's bead size.
 
-import { getColor } from './colors.js';
-
-const TEMP_COLOR_IDS = [
-  'miyuki-401', // Opaque Black
-  'miyuki-402', // Opaque White
-  'miyuki-4201', // Duracoat Galvanized Silver
-  'miyuki-4202', // Duracoat Galvanized Gold
-  'miyuki-408', // Opaque Red
-  'miyuki-414', // Opaque Cobalt
-  'miyuki-412', // Opaque Turquoise Green (11/0 only)
-  'miyuki-404', // Opaque Yellow
-];
+import { getColor, stashColors } from './colors.js';
+import { escapeHtml } from './html.js';
 
 export function setupPalette(container) {
-  let selectedId = TEMP_COLOR_IDS[0]; // null means the eraser
+  container.innerHTML = `
+    <div class="swatches"></div>
+    <button type="button" class="eraser" data-color-id="">Eraser</button>
+    <span class="selected-name"></span>
+  `;
+  const swatches = container.querySelector('.swatches');
+  const selectedName = container.querySelector('.selected-name');
 
-  const buttons = TEMP_COLOR_IDS.map((id) => {
-    const color = getColor(id);
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'swatch';
-    button.style.setProperty('--swatch', color.hex);
-    button.title = `${color.code} ${color.name}`;
-    button.setAttribute('aria-label', button.title);
-    button.dataset.colorId = id;
-    return button;
-  });
-
-  const eraser = document.createElement('button');
-  eraser.type = 'button';
-  eraser.className = 'eraser';
-  eraser.textContent = 'Eraser';
-  eraser.dataset.colorId = ''; // empty = no colour
-
-  container.append(...buttons, eraser);
+  // The chosen colour id. null = the eraser. undefined = nothing chosen yet.
+  let selectedId = undefined;
 
   function showSelected() {
-    for (const button of [...buttons, eraser]) {
+    for (const button of container.querySelectorAll('button')) {
       const id = button.dataset.colorId || null;
       button.setAttribute('aria-pressed', id === selectedId);
     }
+    const color = selectedId && getColor(selectedId);
+    selectedName.textContent = color ? `${color.code} ${color.name}` : 'Eraser';
+  }
+
+  // (Re)build the swatches for a bead size. Called whenever the chart is redrawn,
+  // so it picks up stash changes and bead-size changes.
+  function show(beadSize) {
+    const colors = stashColors(beadSize);
+
+    if (colors.length === 0) {
+      swatches.innerHTML = `
+        <p class="palette-empty">
+          No ${beadSize} colours in your stash yet.
+          <a href="#stash">Add some on the stash screen</a>.
+        </p>`;
+    } else {
+      swatches.innerHTML = colors
+        .map((color) => {
+          const label = escapeHtml(`${color.code} ${color.name}`);
+          return `<button type="button" class="swatch" data-color-id="${escapeHtml(color.id)}"
+            style="--swatch: ${escapeHtml(color.hex)}" title="${label}" aria-label="${label}"></button>`;
+        })
+        .join('');
+    }
+
+    // Keep the chosen colour if it's still here. Otherwise pick the first one
+    // (or the eraser if there are none). If you chose the eraser, it stays.
+    const stillThere = colors.some((color) => color.id === selectedId);
+    if (selectedId === undefined || (selectedId !== null && !stillThere)) {
+      selectedId = colors[0]?.id ?? null;
+    }
+    showSelected();
   }
 
   container.addEventListener('click', (event) => {
-    // closest() finds the button even if you click something inside it.
     const button = event.target.closest('button');
     if (!button) return;
     selectedId = button.dataset.colorId || null;
     showSelected();
   });
 
-  showSelected();
-  return { getSelectedColorId: () => selectedId };
+  return { show, getSelectedColorId: () => selectedId };
 }

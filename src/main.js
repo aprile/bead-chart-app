@@ -2,6 +2,8 @@ import './style.css';
 import { setupNewChartPanel } from './new-chart-panel.js';
 import { setupPalette } from './palette.js';
 import { setupPainting } from './painting.js';
+import { setupStashScreen } from './stash-screen.js';
+import { setupViews } from './views.js';
 import { drawGrid } from './grid.js';
 import * as chart from './chart.js';
 
@@ -12,8 +14,14 @@ const clearButton = document.querySelector('#clear-button');
 
 let layout = null; // bead sizes in pixels, from the last full drawing
 
+let views = null; // set up at the bottom, once the chart exists
+
 function redraw() {
-  layout = drawGrid(canvas, chart.getChart());
+  // While the stash screen is showing, the canvas has no size: draw later.
+  if (views && !views.isShowing('chart')) return;
+  const current = chart.getChart();
+  layout = drawGrid(canvas, current);
+  palette.show(current.beadSize); // the bead size or stash may have changed
   updateButtons();
 }
 
@@ -70,8 +78,9 @@ clearButton.addEventListener('click', () => {
 // Cmd+Z = undo, Shift+Cmd+Z = redo (Ctrl on Windows/Linux).
 window.addEventListener('keydown', (event) => {
   if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'z') return;
+  if (!views.isShowing('chart')) return;
   // In the width/height boxes, let Cmd+Z undo your typing as normal.
-  if (event.target.matches('input[type="number"], input[type="text"], textarea')) return;
+  if (event.target.matches('input[type="number"], input[type="text"], input[type="search"], textarea')) return;
   event.preventDefault();
   if (event.shiftKey) redo();
   else undo();
@@ -80,6 +89,13 @@ window.addEventListener('keydown', (event) => {
 // Resizing the window (or moving it to another screen) changes the space available.
 window.addEventListener('resize', redraw);
 
+setupStashScreen(document.querySelector('#stash-view'));
+
 // Start with an empty chart sized from the form's starting values.
 chart.newChart(panel.readSettings());
-redraw();
+
+// Shows the right view now, and again whenever you switch.
+// Coming back to the chart redraws it, so stash changes show up in the palette.
+views = setupViews((name) => {
+  if (name === 'chart') redraw();
+});
