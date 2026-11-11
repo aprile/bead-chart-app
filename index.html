@@ -65,6 +65,22 @@
           </div>
         </fieldset>
 
+        <!-- Linked to the size above: change one and the other follows. -->
+        <fieldset>
+          <legend>Beads</legend>
+          <div class="size-row">
+            <label>
+              Columns
+              <input type="number" name="cols" value="15" min="1" max="1000" step="1" inputmode="numeric" />
+            </label>
+            <span aria-hidden="true">×</span>
+            <label>
+              Rows
+              <input type="number" name="rows" value="90" min="1" max="1000" step="1" inputmode="numeric" />
+            </label>
+          </div>
+        </fieldset>
+
         <output id="size-result" class="result" for="new-chart-form"></output>
       </form>
 
