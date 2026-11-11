@@ -4,10 +4,52 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>bead-chart-app</title>
+    <title>Bead Chart</title>
   </head>
   <body>
-    <div id="app"></div>
+    <main id="app">
+      <h1>Bead Chart</h1>
+
+      <form id="new-chart-form" class="panel">
+        <h2>New chart</h2>
+
+        <fieldset>
+          <legend>Stitch</legend>
+          <label><input type="radio" name="stitch" value="loom" checked /> Loom</label>
+          <label><input type="radio" name="stitch" value="brick" /> Brick stitch</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Bead size</legend>
+          <label><input type="radio" name="beadSize" value="11/0" checked /> 11/0</label>
+          <label><input type="radio" name="beadSize" value="15/0" /> 15/0</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Finished size</legend>
+          <div class="size-row">
+            <label>
+              Width
+              <input type="number" name="width" value="2" min="0" step="any" inputmode="decimal" />
+            </label>
+            <span aria-hidden="true">×</span>
+            <label>
+              Height
+              <input type="number" name="height" value="18" min="0" step="any" inputmode="decimal" />
+            </label>
+            <label>
+              Unit
+              <select name="unit">
+                <option value="mm">mm</option>
+                <option value="cm" selected>cm</option>
+              </select>
+            </label>
+          </div>
+        </fieldset>
+
+        <output id="size-result" class="result" for="new-chart-form"></output>
+      </form>
+    </main>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
