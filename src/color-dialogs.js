@@ -10,6 +10,7 @@ import {
 } from './colors.js';
 import { nearestColor } from './color-math.js';
 import { getChart, countColor, replaceColorEverywhere } from './chart.js';
+import { countColorInSavedCharts, replaceColorInSavedCharts } from './storage.js';
 import { escapeHtml } from './html.js';
 
 // onChange() runs after anything is saved, so the stash list can refresh.
@@ -116,17 +117,24 @@ export function setupColorDialogs(onChange) {
     // Possible replacements: my stash colours in the chart's bead size.
     replacementChoices = stashColors(chart.beadSize).filter((c) => c.id !== color.id);
     const suggested = nearestColor(color.hex, replacementChoices);
-    const used = countColor(color.id);
+    const usedHere = countColor(color.id);
+    const elsewhere = countColorInSavedCharts(color.id, chart.id); // my other saved charts
 
-    if (used === 0) {
+    if (usedHere === 0 && elsewhere.beads === 0) {
       if (!confirm(`Delete “${colorLabel(color)}”?`)) return;
-      // Not in the chart now, but it might be in the undo history.
+      // Not in any chart now, but it might be in the undo history.
       finishDelete(suggested?.id ?? null);
       return;
     }
 
+    const beads = (n) => `${n} bead${n === 1 ? '' : 's'}`;
+    const places = [];
+    if (usedHere > 0) places.push(`${beads(usedHere)} of the open chart`);
+    if (elsewhere.beads > 0) {
+      places.push(`${beads(elsewhere.beads)} in ${elsewhere.charts} other chart${elsewhere.charts === 1 ? '' : 's'}`);
+    }
     deleteForm.querySelector('.delete-message').textContent =
-      `“${colorLabel(color)}” is used in ${used} bead${used === 1 ? '' : 's'} of the current chart.`;
+      `“${colorLabel(color)}” is used in ${places.join(' and ')}.`;
 
     // Suggested colour first, then the rest of the stash, then "empty".
     const others = replacementChoices.filter((c) => c !== suggested);
@@ -157,6 +165,7 @@ export function setupColorDialogs(onChange) {
 
   function finishDelete(replacementId) {
     replaceColorEverywhere(deletingColor.id, replacementId);
+    replaceColorInSavedCharts(deletingColor.id, replacementId, getChart().id);
     deleteCustomColor(deletingColor.id);
     onChange();
   }

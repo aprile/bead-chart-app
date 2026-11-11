@@ -12,13 +12,23 @@
         <h1>Bead Chart</h1>
         <nav class="view-switch" aria-label="Views">
           <a href="#chart">Chart</a>
+          <a href="#charts">My charts</a>
           <a href="#stash">My stash</a>
         </nav>
       </header>
 
       <section id="chart-view">
+      <div class="chart-header">
+        <label class="chart-name-label">
+          Chart name
+          <input type="text" id="chart-name" maxlength="100" />
+        </label>
+        <span id="save-status" class="save-status" aria-live="polite">Saved</span>
+        <button type="button" id="new-chart-button">New chart</button>
+      </div>
+
       <form id="new-chart-form" class="panel">
-        <h2>New chart</h2>
+        <h2>Size</h2>
 
         <fieldset>
           <legend>Stitch</legend>
@@ -67,10 +77,35 @@
         </div>
       </div>
 
+      <p id="missing-note" class="warning" hidden></p>
+
       <!-- Scrolls sideways if a chart is ever wider than the screen. -->
       <div class="grid-wrap">
         <canvas id="chart-canvas"></canvas>
       </div>
+      </section>
+
+      <section id="charts-view" hidden>
+        <div class="charts-top">
+          <h2>My charts</h2>
+          <button type="button" id="charts-new-button" class="primary">New chart</button>
+        </div>
+        <!-- Filled in by src/charts-screen.js -->
+        <ul id="charts-list" class="charts-list"></ul>
+
+        <div class="panel backup">
+          <h3>Backup</h3>
+          <p class="note">
+            One file with all your charts, your stash, custom colours and colour edits.
+            Importing a backup replaces everything you have now.
+          </p>
+          <div class="backup-buttons">
+            <button type="button" id="export-button">Export backup</button>
+            <button type="button" id="import-button">Import backup…</button>
+            <input type="file" id="import-file" accept=".json,application/json" hidden />
+          </div>
+          <p id="backup-status" class="note" aria-live="polite"></p>
+        </div>
       </section>
 
       <section id="stash-view" hidden>

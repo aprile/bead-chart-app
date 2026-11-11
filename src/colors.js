@@ -4,16 +4,10 @@
 
 import data from './data/miyuki-colors.json';
 import { BEAD_SIZES } from './beads.js';
-import { load, save } from './storage.js';
+import { load, save, STORAGE_KEYS } from './storage.js';
 
 export const BEAD_SIZE_NAMES = Object.keys(BEAD_SIZES); // ['11/0', '15/0']
 const MIYUKI_COLORS = data.colors;
-
-const STORAGE_KEYS = {
-  stash: 'bead-chart-app.stash',
-  customColors: 'bead-chart-app.customColors',
-  overrides: 'bead-chart-app.colorOverrides',
-};
 
 // ---- Screen-colour overrides for Miyuki colours ----
 // Saved shape: { "miyuki-401": "#101010", ... }
@@ -51,6 +45,16 @@ rebuildLookup();
 
 export function getColor(id) {
   return colorsById.get(id);
+}
+
+// A bead whose colour no longer exists (e.g. a deleted custom colour in an
+// imported chart). Empty beads (null) are not "missing".
+export function isMissingColor(id) {
+  return id !== null && !colorsById.has(id);
+}
+
+export function countMissingBeads(beads) {
+  return beads.flat().filter(isMissingColor).length;
 }
 
 // Custom colours first, then the Miyuki list.

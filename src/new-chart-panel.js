@@ -1,21 +1,12 @@
 // The "New chart" form: reads what you type and shows the bead count.
 
-import { calculateChartSize } from './sizing.js';
+import { calculateChartSize, formatLength, MM_PER_UNIT } from './sizing.js';
 import { BEAD_SIZES } from './beads.js';
-import { load, save } from './storage.js';
-
-const MM_PER_UNIT = { mm: 1, cm: 10 };
+import { load, save, STORAGE_KEYS } from './storage.js';
 
 // The last stitch and bead size I picked, remembered across refreshes.
 // Saved shape: { stitch: "brick", beadSize: "15/0" }
-const CHOICES_KEY = 'bead-chart-app.lastChoices';
-
-// Show a mm value in the chosen unit, e.g. 20.4 mm → "2.04 cm".
-function formatLength(mm, unit) {
-  const value = mm / MM_PER_UNIT[unit];
-  // toFixed(2) gives 2 decimals; Number(...) drops trailing zeros (2.50 → 2.5).
-  return `${Number(value.toFixed(2))} ${unit}`;
-}
+const CHOICES_KEY = STORAGE_KEYS.lastChoices;
 
 // onChange(settings) runs every time the form changes to valid numbers.
 // onEditEnd() runs when you finish an edit (leave a field, click a radio…).
@@ -30,7 +21,7 @@ export function setupNewChartPanel(form, { onChange, onEditEnd }) {
   // Put back the saved choices, but only if they're still valid options.
   const saved = load(CHOICES_KEY);
   if (['loom', 'brick'].includes(saved?.stitch)) fields.stitch.value = saved.stitch;
-  if (saved?.beadSize in BEAD_SIZES) fields.beadSize.value = saved.beadSize;
+  if (Object.hasOwn(BEAD_SIZES, saved?.beadSize)) fields.beadSize.value = saved.beadSize;
 
   // Read the form. Returns null if the width or height isn't a number above 0.
   function readSettings() {

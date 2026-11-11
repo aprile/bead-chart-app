@@ -2,7 +2,7 @@
 // Bead proportions come from sizing.js (which reads the dimensions in beads.js).
 
 import { beadSpacing } from './sizing.js';
-import { getColor } from './colors.js';
+import { getColor, isMissingColor } from './colors.js';
 
 // Size limits for one bead on screen, measured on its shorter side, in CSS pixels.
 // MIN stops long charts (bracelets) shrinking to dots: the page scrolls instead.
@@ -16,7 +16,9 @@ const MAX_CANVAS_AREA = 16777216;
 
 const EMPTY_FILL = '#d6d4d9';
 const BEAD_EDGE = '#b3b0b8';
-const UNKNOWN_FILL = '#ff00ff'; // a colour id we can't find: easy to spot
+// A colour that no longer exists: white with a red cross, easy to spot.
+const MISSING_FILL = '#ffffff';
+const MISSING_MARK = '#d32f2f';
 
 // Pick how many screen pixels one millimetre gets.
 function chooseScale(widthMm, heightMm, smallerBeadMm, availWidth, availHeight) {
@@ -37,7 +39,23 @@ function choosePixelRatio(cssWidth, cssHeight) {
 
 function fillFor(colorId) {
   if (colorId === null) return EMPTY_FILL;
-  return getColor(colorId)?.hex ?? UNKNOWN_FILL;
+  return getColor(colorId)?.hex ?? MISSING_FILL;
+}
+
+// Adds an × across a bead to a path (for missing colours).
+function addMissingMark(path, layout, row, col) {
+  const { x, y } = cellPosition(layout, row, col);
+  const inset = Math.min(layout.beadW, layout.beadH) * 0.25;
+  path.moveTo(x + inset, y + inset);
+  path.lineTo(x + layout.beadW - inset, y + layout.beadH - inset);
+  path.moveTo(x + layout.beadW - inset, y + inset);
+  path.lineTo(x + inset, y + layout.beadH - inset);
+}
+
+function strokeMissingMarks(ctx, path) {
+  ctx.strokeStyle = MISSING_MARK;
+  ctx.lineWidth = 1.5;
+  ctx.stroke(path);
 }
 
 // Top-left corner of a bead's cell, in CSS pixels.
@@ -101,12 +119,15 @@ export function drawGrid(canvas, chart) {
   // shape once. Much faster than filling thousands of beads one by one.
   const shapes = new Map(); // fill colour → Path2D
   const outlines = new Path2D();
+  const missingMarks = new Path2D();
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
-      const fill = fillFor(beads[row][col]);
+      const colorId = beads[row][col];
+      const fill = fillFor(colorId);
       if (!shapes.has(fill)) shapes.set(fill, new Path2D());
       addBeadShape(shapes.get(fill), layout, row, col);
       addBeadShape(outlines, layout, row, col);
+      if (isMissingColor(colorId)) addMissingMark(missingMarks, layout, row, col);
     }
   }
   for (const [fill, shape] of shapes) {
@@ -116,8 +137,46 @@ export function drawGrid(canvas, chart) {
   ctx.strokeStyle = BEAD_EDGE;
   ctx.lineWidth = 1;
   ctx.stroke(outlines);
+  strokeMissingMarks(ctx, missingMarks);
 
   return layout;
+}
+
+// A small picture of a chart for the "My charts" list: plain rectangles,
+// no gaps, fitted inside maxWidth × maxHeight CSS pixels.
+export function drawPreview(canvas, chart, maxWidth, maxHeight) {
+  const { columnWidth, rowHeight } = beadSpacing(chart.stitch, chart.beadSize);
+  const isBrick = chart.stitch === 'brick';
+  const widthMm = (chart.cols + (isBrick ? 0.5 : 0)) * columnWidth;
+  const heightMm = chart.rows * rowHeight;
+  const scale = Math.min(maxWidth / widthMm, maxHeight / heightMm);
+
+  const cssWidth = widthMm * scale;
+  const cssHeight = heightMm * scale;
+  const ratio = window.devicePixelRatio || 1;
+  canvas.style.width = `${cssWidth}px`;
+  canvas.style.height = `${cssHeight}px`;
+  canvas.width = Math.round(cssWidth * ratio);
+  canvas.height = Math.round(cssHeight * ratio);
+
+  const layout = { isBrick, beadW: columnWidth * scale, beadH: rowHeight * scale };
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+  const shapes = new Map();
+  chart.beads.forEach((beadRow, row) => {
+    beadRow.forEach((colorId, col) => {
+      // Missing colours show as solid red here: the preview is too small for an ×.
+      const fill = isMissingColor(colorId) ? MISSING_MARK : fillFor(colorId);
+      if (!shapes.has(fill)) shapes.set(fill, new Path2D());
+      const { x, y } = cellPosition(layout, row, col);
+      shapes.get(fill).rect(x, y, layout.beadW, layout.beadH);
+    });
+  });
+  for (const [fill, shape] of shapes) {
+    ctx.fillStyle = fill;
+    ctx.fill(shape);
+  }
 }
 
 // Redraws just one bead (used while painting, so dragging stays fast).
@@ -134,6 +193,11 @@ export function drawBead(canvas, layout, row, col, colorId) {
   ctx.strokeStyle = BEAD_EDGE;
   ctx.lineWidth = 1;
   ctx.stroke(shape);
+  if (isMissingColor(colorId)) {
+    const mark = new Path2D();
+    addMissingMark(mark, layout, row, col);
+    strokeMissingMarks(ctx, mark);
+  }
 }
 
 // Which bead is at (x, y), in CSS pixels from the canvas's top left?

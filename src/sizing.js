@@ -33,3 +33,12 @@ export function calculateChartSize({ stitch, beadSize, widthMm, heightMm }) {
     realHeightMm: rows * rowHeight,
   };
 }
+
+export const MM_PER_UNIT = { mm: 1, cm: 10 };
+
+// Show a mm value in a unit, e.g. 20.4 mm → "2.04 cm".
+export function formatLength(mm, unit) {
+  const value = mm / MM_PER_UNIT[unit];
+  // toFixed(2) gives 2 decimals; Number(...) drops trailing zeros (2.50 → 2.5).
+  return `${Number(value.toFixed(2))} ${unit}`;
+}

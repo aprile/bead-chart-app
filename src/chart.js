@@ -1,9 +1,12 @@
 // The chart data (which colour is in each bead) and the undo/redo history.
 // No drawing happens here: grid.js does that.
 //
-// Chart shape (from PLAN.md):
-// { name, stitch, beadSize, widthMm, heightMm, cols, rows,
-//   beads: [[color id or null, ...], ...] }   ← beads[row][col], null = empty
+// Chart shape (from PLAN.md, plus an id and dates for saving):
+// { id, name, stitch, beadSize, widthMm, heightMm, cols, rows,
+//   beads: [[color id or null, ...], ...],   ← beads[row][col], null = empty
+//   createdAt, updatedAt }                    ← times in milliseconds
+
+export const DEFAULT_NAME = 'Untitled chart';
 
 const HISTORY_LIMIT = 100; // oldest steps are forgotten after this
 
@@ -14,6 +17,15 @@ let redoStack = []; // versions you undid, ready to redo
 let strokeStart = null; // copy of the chart from when the current drag began
 let strokeChanged = false;
 let resizeBase = null; // copy of the chart from when the current form edit began
+
+// Functions to call whenever the chart changes (autosave uses this).
+const listeners = [];
+export function onChange(listener) {
+  listeners.push(listener);
+}
+function notify() {
+  for (const listener of listeners) listener();
+}
 
 // A full copy, so later changes don't affect the saved version.
 function copyChart(c) {
@@ -46,11 +58,42 @@ export function canRedo() {
   return redoStack.length > 0;
 }
 
-// settings = { stitch, beadSize, widthMm, heightMm, cols, rows }
-export function newChart(settings) {
-  chart = { name: 'Untitled chart', ...settings, beads: emptyBeads(settings.cols, settings.rows) };
+function resetHistory() {
   undoStack = [];
   redoStack = [];
+  strokeStart = null;
+  resizeBase = null;
+}
+
+// settings = { stitch, beadSize, widthMm, heightMm, cols, rows }
+export function newChart(settings, name = DEFAULT_NAME) {
+  const now = Date.now();
+  chart = {
+    id: crypto.randomUUID(), // a long random id, unique to this chart
+    name,
+    stitch: settings.stitch,
+    beadSize: settings.beadSize,
+    widthMm: settings.widthMm,
+    heightMm: settings.heightMm,
+    cols: settings.cols,
+    rows: settings.rows,
+    beads: emptyBeads(settings.cols, settings.rows),
+    createdAt: now,
+    updatedAt: now,
+  };
+  resetHistory();
+}
+
+// Open a saved chart. Its undo history starts empty.
+export function openChart(saved) {
+  chart = copyChart(saved);
+  resetHistory();
+}
+
+// The name isn't part of undo: undoing a bead keeps the name you typed.
+export function renameChart(name) {
+  chart.name = name;
+  notify();
 }
 
 // ---- Painting: one whole drag = one undo step ----
@@ -66,6 +109,7 @@ export function paintBead(row, col, colorId) {
   if (chart.beads[row][col] === colorId) return false;
   chart.beads[row][col] = colorId;
   strokeChanged = true;
+  notify();
   return true;
 }
 
@@ -90,7 +134,8 @@ export function resizeChart(settings) {
   const beads = emptyBeads(settings.cols, settings.rows).map((row, r) =>
     row.map((_, c) => base.beads[r]?.[c] ?? null),
   );
-  chart = { ...base, ...settings, beads };
+  chart = { ...base, ...settings, name: chart.name, beads };
+  notify();
 }
 
 export function endResize() {
@@ -118,6 +163,7 @@ export function replaceColorEverywhere(oldId, newId) {
       });
     }
   }
+  notify();
 }
 
 // ---- Clear, undo, redo ----
@@ -130,20 +176,25 @@ export function clearChart() {
   endResize();
   saveUndoStep(copyChart(chart));
   chart.beads = emptyBeads(chart.cols, chart.rows);
+  notify();
 }
 
 export function undo() {
   endResize();
   if (!canUndo()) return false;
+  const name = chart.name;
   redoStack.push(chart);
-  chart = undoStack.pop();
+  chart = { ...undoStack.pop(), name };
+  notify();
   return true;
 }
 
 export function redo() {
   endResize();
   if (!canRedo()) return false;
+  const name = chart.name;
   undoStack.push(chart);
-  chart = redoStack.pop();
+  chart = { ...redoStack.pop(), name };
+  notify();
   return true;
 }
