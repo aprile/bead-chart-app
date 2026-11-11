@@ -1,1 +1,0 @@
-# bead-chart-app
