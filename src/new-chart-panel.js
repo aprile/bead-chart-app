@@ -11,7 +11,9 @@ function formatLength(mm, unit) {
   return `${Number(value.toFixed(2))} ${unit}`;
 }
 
-export function setupNewChartPanel(form) {
+// onChange is called with the new chart size every time the form changes
+// (or with null if the numbers aren't valid).
+export function setupNewChartPanel(form, onChange) {
   const result = form.querySelector('#size-result');
 
   function update() {
@@ -23,13 +25,15 @@ export function setupNewChartPanel(form) {
 
     if (!(width > 0) || !(height > 0)) {
       result.textContent = 'Enter a width and height above 0.';
+      onChange(null);
       return;
     }
 
     const stitch = data.get('stitch');
+    const beadSize = data.get('beadSize');
     const size = calculateChartSize({
       stitch,
-      beadSize: data.get('beadSize'),
+      beadSize,
       widthMm: width * MM_PER_UNIT[unit],
       heightMm: height * MM_PER_UNIT[unit],
     });
@@ -41,6 +45,8 @@ export function setupNewChartPanel(form) {
       <p>Real finished size: ${formatLength(size.realWidthMm, unit)}${overhangNote}
         × ${formatLength(size.realHeightMm, unit)}</p>
     `;
+
+    onChange({ stitch, beadSize, cols: size.cols, rows: size.rows });
   }
 
   // 'input' fires on every keystroke and every radio/select change.
