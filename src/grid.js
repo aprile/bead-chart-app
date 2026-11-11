@@ -142,9 +142,11 @@ export function drawGrid(canvas, chart) {
   return layout;
 }
 
-// A small picture of a chart for the "My charts" list: plain rectangles,
-// no gaps, fitted inside maxWidth × maxHeight CSS pixels.
-export function drawPreview(canvas, chart, maxWidth, maxHeight) {
+// A small picture of a chart (My charts list, photo preview): plain
+// rectangles, no gaps, fitted inside maxWidth × maxHeight CSS pixels.
+// fillOf(bead) is optional: it lets the photo preview draw beads that are
+// plain colours instead of colour ids (return null for an empty bead).
+export function drawPreview(canvas, chart, maxWidth, maxHeight, fillOf = null) {
   const { columnWidth, rowHeight } = beadSpacing(chart.stitch, chart.beadSize);
   const isBrick = chart.stitch === 'brick';
   const widthMm = (chart.cols + (isBrick ? 0.5 : 0)) * columnWidth;
@@ -166,8 +168,10 @@ export function drawPreview(canvas, chart, maxWidth, maxHeight) {
   const shapes = new Map();
   chart.beads.forEach((beadRow, row) => {
     beadRow.forEach((colorId, col) => {
+      let fill;
+      if (fillOf) fill = fillOf(colorId) ?? EMPTY_FILL;
       // Missing colours show as solid red here: the preview is too small for an ×.
-      const fill = isMissingColor(colorId) ? MISSING_MARK : fillFor(colorId);
+      else fill = isMissingColor(colorId) ? MISSING_MARK : fillFor(colorId);
       if (!shapes.has(fill)) shapes.set(fill, new Path2D());
       const { x, y } = cellPosition(layout, row, col);
       shapes.get(fill).rect(x, y, layout.beadW, layout.beadH);

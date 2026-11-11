@@ -172,6 +172,14 @@ export function isEmpty() {
   return chart.beads.every((row) => row.every((bead) => bead === null));
 }
 
+// Replace every bead at once (e.g. from a photo), as one undo step.
+export function setAllBeads(beads) {
+  endResize();
+  saveUndoStep(copyChart(chart));
+  chart.beads = beads.map((row) => [...row]);
+  notify();
+}
+
 export function clearChart() {
   endResize();
   saveUndoStep(copyChart(chart));

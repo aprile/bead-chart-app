@@ -74,6 +74,8 @@
           <button type="button" id="undo-button" title="Undo (⌘Z)">Undo</button>
           <button type="button" id="redo-button" title="Redo (⇧⌘Z)">Redo</button>
           <button type="button" id="clear-button">Clear chart</button>
+          <button type="button" id="photo-button">Import photo…</button>
+          <input type="file" id="photo-file" accept="image/*" hidden />
         </div>
       </div>
 
@@ -146,6 +148,85 @@
         <!-- Filled in by src/stash-screen.js -->
         <ul id="stash-list" class="stash-list"></ul>
       </section>
+
+      <!-- Photo to chart (src/photo.js) -->
+      <dialog id="photo-dialog" class="photo-dialog">
+        <h3>Photo to chart</h3>
+        <p class="note">
+          Drag the box to move it, or drag a corner to resize it. It has the same shape as
+          your chart (<span class="photo-shape"></span>). Apply replaces all the beads in the
+          chart, and you can undo it.
+        </p>
+        <div class="photo-panes">
+          <div class="photo-stage">
+            <!-- the photo (a canvas) is put here by photo.js -->
+            <div class="crop-box">
+              <span class="crop-handle" data-corner="nw"></span>
+              <span class="crop-handle" data-corner="ne"></span>
+              <span class="crop-handle" data-corner="sw"></span>
+              <span class="crop-handle" data-corner="se"></span>
+            </div>
+          </div>
+          <div class="photo-result">
+            <canvas class="photo-preview"></canvas>
+            <p class="note photo-summary"></p>
+            <label class="toggle">
+              <input type="checkbox" name="showSampled" form="photo-controls" />
+              Show sampled colours (before matching to my stash)
+            </label>
+          </div>
+
+          <!-- All the settings. Any change updates the preview. -->
+          <form id="photo-controls" class="photo-controls">
+            <fieldset>
+              <legend>Colours</legend>
+              <label class="slider">
+                <span>Max colours <output name="capValue">6</output></span>
+                <input type="range" name="cap" min="2" max="20" value="6" />
+              </label>
+              <p class="note">Lock a colour to keep it, or swap it for another stash colour.</p>
+              <ul class="chosen-colors"></ul>
+            </fieldset>
+
+            <fieldset>
+              <legend>Adjust photo</legend>
+              <label class="slider">
+                <span>Brightness <output name="brightnessValue">0</output></span>
+                <input type="range" name="brightness" min="-100" max="100" value="0" />
+              </label>
+              <label class="slider">
+                <span>Contrast <output name="contrastValue">0</output></span>
+                <input type="range" name="contrast" min="-100" max="100" value="0" />
+              </label>
+              <label class="slider">
+                <span>Saturation <output name="saturationValue">0</output></span>
+                <input type="range" name="saturation" min="-100" max="100" value="0" />
+              </label>
+              <button type="button" data-action="reset-adjust">Reset adjustments</button>
+            </fieldset>
+
+            <fieldset>
+              <legend>Background</legend>
+              <label class="toggle">
+                <input type="checkbox" name="removeBackground" /> Remove background (beads left empty)
+              </label>
+              <div class="background-pick">
+                <button type="button" data-action="pick-background">Pick colour in photo</button>
+                <span class="swatch-inline background-swatch empty"></span>
+              </div>
+              <p class="note picking-note" hidden>Click the background in the photo (Esc to stop).</p>
+              <label class="slider">
+                <span>How similar <output name="toleranceValue">12</output></span>
+                <input type="range" name="tolerance" min="3" max="40" value="12" />
+              </label>
+            </fieldset>
+          </form>
+        </div>
+        <div class="dialog-buttons">
+          <button type="button" data-action="cancel">Cancel</button>
+          <button type="button" class="primary" data-action="apply">Apply to chart</button>
+        </div>
+      </dialog>
 
       <!-- Pop-up forms for colours (src/color-dialogs.js) -->
 

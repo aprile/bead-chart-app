@@ -5,6 +5,7 @@ import { setupPainting } from './painting.js';
 import { setupStashScreen } from './stash-screen.js';
 import { setupChartsScreen } from './charts-screen.js';
 import { setupViews } from './views.js';
+import { setupPhotoImport } from './photo.js';
 import { drawGrid } from './grid.js';
 import { countMissingBeads } from './colors.js';
 import { loadSavedChart, listSavedCharts, getCurrentChartId, setCurrentChartId } from './storage.js';
@@ -136,6 +137,16 @@ clearButton.addEventListener('click', () => {
     chart.clearChart();
     redraw();
   }
+});
+
+setupPhotoImport({
+  button: document.querySelector('#photo-button'),
+  fileInput: document.querySelector('#photo-file'),
+  getChart: chart.getChart,
+  onApply(beads) {
+    chart.setAllBeads(beads);
+    redraw();
+  },
 });
 
 // Cmd+Z = undo, Shift+Cmd+Z = redo (Ctrl on Windows/Linux).
