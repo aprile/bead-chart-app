@@ -50,6 +50,16 @@
         <output id="size-result" class="result" for="new-chart-form"></output>
       </form>
 
+      <div class="toolbar">
+        <!-- Temporary colours; filled in by src/palette.js -->
+        <div id="palette" class="palette" aria-label="Colours"></div>
+        <div class="actions">
+          <button type="button" id="undo-button" title="Undo (⌘Z)">Undo</button>
+          <button type="button" id="redo-button" title="Redo (⇧⌘Z)">Redo</button>
+          <button type="button" id="clear-button">Clear chart</button>
+        </div>
+      </div>
+
       <!-- Scrolls sideways if a chart is ever wider than the screen. -->
       <div class="grid-wrap">
         <canvas id="chart-canvas"></canvas>

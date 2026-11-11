@@ -1,7 +1,8 @@
-// Draws the bead chart grid on a <canvas>.
+// Draws the bead chart grid on a <canvas>, and works out which bead is at a point.
 // Bead proportions come from sizing.js (which reads the dimensions in beads.js).
 
 import { beadSpacing } from './sizing.js';
+import { getColor } from './colors.js';
 
 // Size limits for one bead on screen, measured on its shorter side, in CSS pixels.
 // MIN stops long charts (bracelets) shrinking to dots: the page scrolls instead.
@@ -13,8 +14,9 @@ const MAX_BEAD_PX = 48;
 const MAX_CANVAS_SIDE = 16384;
 const MAX_CANVAS_AREA = 16777216;
 
-const BEAD_FILL = '#d6d4d9';
+const EMPTY_FILL = '#d6d4d9';
 const BEAD_EDGE = '#b3b0b8';
+const UNKNOWN_FILL = '#ff00ff'; // a colour id we can't find: easy to spot
 
 // Pick how many screen pixels one millimetre gets.
 function chooseScale(widthMm, heightMm, smallerBeadMm, availWidth, availHeight) {
@@ -33,9 +35,28 @@ function choosePixelRatio(cssWidth, cssHeight) {
   return ratio;
 }
 
-// chart = { stitch, beadSize, cols, rows }
+function fillFor(colorId) {
+  if (colorId === null) return EMPTY_FILL;
+  return getColor(colorId)?.hex ?? UNKNOWN_FILL;
+}
+
+// Top-left corner of a bead's cell, in CSS pixels.
+// Brick stitch: odd rows (the 2nd, 4th…) are shifted right by half a bead.
+function cellPosition(layout, row, col) {
+  const shift = layout.isBrick && row % 2 === 1 ? layout.beadW / 2 : 0;
+  return { x: col * layout.beadW + shift, y: row * layout.beadH };
+}
+
+function addBeadShape(path, layout, row, col) {
+  const { x, y } = cellPosition(layout, row, col);
+  const { beadW, beadH, gap, radius } = layout;
+  path.roundRect(x + gap / 2, y + gap / 2, beadW - gap, beadH - gap, radius);
+}
+
+// Draws the whole chart. Returns the "layout" (sizes in pixels), which
+// beadAtPoint() and drawBead() need.
 export function drawGrid(canvas, chart) {
-  const { stitch, beadSize, cols, rows } = chart;
+  const { stitch, beadSize, cols, rows, beads } = chart;
   const { columnWidth, rowHeight } = beadSpacing(stitch, beadSize);
   const isBrick = stitch === 'brick';
 
@@ -61,27 +82,69 @@ export function drawGrid(canvas, chart) {
   canvas.width = Math.round(cssWidth * ratio);
   canvas.height = Math.round(cssHeight * ratio);
 
+  const layout = {
+    isBrick,
+    cols,
+    rows,
+    beadW,
+    beadH,
+    ratio,
+    gap: Math.max(1, Math.min(beadW, beadH) * 0.08), // small gap between beads
+    radius: Math.min(beadW, beadH) * 0.35, // rounded corners
+  };
+
   const ctx = canvas.getContext('2d');
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0); // from here on, draw in CSS pixels
   ctx.clearRect(0, 0, cssWidth, cssHeight);
 
-  // A small gap between beads, and rounded corners.
-  const gap = Math.max(1, Math.min(beadW, beadH) * 0.08);
-  const radius = Math.min(beadW, beadH) * 0.35;
-
-  // Add every bead to one shape, then fill and outline it all at once (much faster).
-  ctx.beginPath();
+  // Group the beads by colour into one shape per colour, then fill each
+  // shape once. Much faster than filling thousands of beads one by one.
+  const shapes = new Map(); // fill colour → Path2D
+  const outlines = new Path2D();
   for (let row = 0; row < rows; row++) {
-    const shift = isBrick && row % 2 === 1 ? beadW / 2 : 0;
     for (let col = 0; col < cols; col++) {
-      const x = col * beadW + shift + gap / 2;
-      const y = row * beadH + gap / 2;
-      ctx.roundRect(x, y, beadW - gap, beadH - gap, radius);
+      const fill = fillFor(beads[row][col]);
+      if (!shapes.has(fill)) shapes.set(fill, new Path2D());
+      addBeadShape(shapes.get(fill), layout, row, col);
+      addBeadShape(outlines, layout, row, col);
     }
   }
-  ctx.fillStyle = BEAD_FILL;
-  ctx.fill();
+  for (const [fill, shape] of shapes) {
+    ctx.fillStyle = fill;
+    ctx.fill(shape);
+  }
   ctx.strokeStyle = BEAD_EDGE;
   ctx.lineWidth = 1;
-  ctx.stroke();
+  ctx.stroke(outlines);
+
+  return layout;
+}
+
+// Redraws just one bead (used while painting, so dragging stays fast).
+export function drawBead(canvas, layout, row, col, colorId) {
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(layout.ratio, 0, 0, layout.ratio, 0, 0);
+  const { x, y } = cellPosition(layout, row, col);
+  ctx.clearRect(x, y, layout.beadW, layout.beadH);
+
+  const shape = new Path2D();
+  addBeadShape(shape, layout, row, col);
+  ctx.fillStyle = fillFor(colorId);
+  ctx.fill(shape);
+  ctx.strokeStyle = BEAD_EDGE;
+  ctx.lineWidth = 1;
+  ctx.stroke(shape);
+}
+
+// Which bead is at (x, y), in CSS pixels from the canvas's top left?
+// Returns { row, col }, or null if the point isn't on a bead
+// (e.g. the empty half-bead at the end of a brick row).
+export function beadAtPoint(layout, x, y) {
+  const row = Math.floor(y / layout.beadH);
+  if (row < 0 || row >= layout.rows) return null;
+  // Undo the brick shift for this row before working out the column.
+  const shift = layout.isBrick && row % 2 === 1 ? layout.beadW / 2 : 0;
+  const col = Math.floor((x - shift) / layout.beadW);
+  if (col < 0 || col >= layout.cols) return null;
+  return { row, col };
 }
