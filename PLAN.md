@@ -88,8 +88,9 @@ Finished beadwork usually comes out a bit bigger than the specs because of threa
 4. [x] Load `miyuki-colors.json` + stash screen + stash-only palette + add/edit/delete custom colors
 5. [x] Save/load (localStorage + JSON file)
 6. [x] Photo import + color cap + color matching
-7. [ ] Polish: zoom, grid lines toggle, calibration screen, edit color from bead photo, rename/duplicate charts
+7. [x] Polish: zoom, grid lines toggle, calibration screen, edit color from bead photo, rename/duplicate charts
 
 ## Progress
 - **Milestones 1–6 done.** Beyond the plan, they also added: a "My charts" screen, autosave, a backup check before import, a "missing colour" look for deleted colours, and in photo import a debug view of the sampled colours, dominant-colour sampling, lock/swap for the chosen colours, brightness/contrast/saturation, and background removal.
-- **Milestone 7 in progress.** Done: zoom (buttons, fit to screen, Cmd + scroll / pinch), grid lines toggle, row and column numbers, view settings remembered. Rename/duplicate charts were done in milestone 5. Still to do: calibration screen, edit a colour from a bead photo.
+- **Milestone 7 done.** Zoom (buttons, fit to screen, Cmd + scroll / pinch), loom grid lines with every 10th line marked, row and column numbers counted from the bottom left, view settings remembered, a calibration screen (my measurements replace the spec per bead size + stitch; saved charts keep their bead counts and are included in the backup), and picking a colour from a bead photo. Rename/duplicate charts were done in milestone 5.
+- **Version 1 is complete.** Next candidates from "Not in version 1": a printable chart and a bead count per colour.

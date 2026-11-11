@@ -846,3 +846,149 @@ dialog.photo-dialog {
   opacity: 0.45;
   cursor: default;
 }
+
+/* ---- Colour box + "Pick from photo" button in the colour forms ---- */
+
+.dialog-form .color-field {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.dialog-form .color-field label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+/* ---- Pick colour from photo ---- */
+
+dialog.pick-color-dialog {
+  width: min(900px, calc(100vw - 32px));
+}
+
+.pick-color-dialog h3 {
+  margin: 0 0 8px;
+}
+
+.pick-tips {
+  margin: 0 0 12px;
+  padding-left: 1.2em;
+}
+
+.pick-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.pick-viewport {
+  max-height: 55vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+.pick-stage {
+  position: relative;
+  width: fit-content;
+  margin: 0 auto;
+  touch-action: none;
+}
+
+.pick-stage canvas {
+  display: block;
+  cursor: crosshair;
+}
+
+.pick-selection {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid #fff;
+  outline: 1px solid #000;
+  pointer-events: none;
+}
+
+.pick-compare {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.pick-compare > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pick-swatch {
+  width: 40px;
+  height: 40px;
+}
+
+/* ---- Calibration ---- */
+
+.calibration-tips {
+  padding-left: 1.2em;
+}
+
+.calibration-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.calibration-card h3 {
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calibration-status:not(.measured) {
+  border-color: var(--muted);
+  color: var(--muted);
+}
+
+.calibration-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-bottom: 12px;
+  font-size: 0.875rem;
+}
+
+.calibration-label {
+  width: 3.5em;
+  font-weight: 600;
+}
+
+.calibration-row input {
+  width: 4.5em;
+  font: inherit;
+  color: var(--text);
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+.calibration-result {
+  flex-basis: 100%;
+  margin: 0 0 0 calc(3.5em + 10px);
+}
+
+.calibration-buttons {
+  display: flex;
+  gap: 8px;
+}

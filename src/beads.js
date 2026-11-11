@@ -1,6 +1,7 @@
 // Bead dimensions, in millimetres. This is the ONE place they live.
 // Values are the published Miyuki specs from PLAN.md.
-// Later, the calibration setting will be able to override these.
+// My calibration measurements (calibration.js) can override these;
+// sizing.js decides which to use.
 //
 // diameter  = across the bead
 // thickness = length along the hole

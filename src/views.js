@@ -7,6 +7,7 @@ export function setupViews(onShow) {
     chart: document.querySelector('#chart-view'),
     charts: document.querySelector('#charts-view'),
     stash: document.querySelector('#stash-view'),
+    calibration: document.querySelector('#calibration-view'),
   };
   const links = document.querySelectorAll('.view-switch a');
 

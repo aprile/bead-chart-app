@@ -1,6 +1,6 @@
 // The "New chart" form: reads what you type and shows the bead count.
 
-import { calculateChartSize, formatLength, MM_PER_UNIT } from './sizing.js';
+import { calculateChartSize, realSize, formatLength, MM_PER_UNIT } from './sizing.js';
 import { BEAD_SIZES } from './beads.js';
 import { load, save, STORAGE_KEYS } from './storage.js';
 
@@ -40,12 +40,15 @@ export function setupNewChartPanel(form, { onChange, onEditEnd }) {
     return { ...settings, cols: size.cols, rows: size.rows };
   }
 
+  // settings has cols and rows (from the form, or a saved chart). The real
+  // size comes from those bead counts, so an existing chart keeps its counts
+  // even if my calibration changes; only its finished size updates.
   function showResult(settings) {
     const unit = fields.unit.value;
-    const size = calculateChartSize(settings);
+    const size = realSize(settings);
     const overhangNote = settings.stitch === 'brick' ? ' (incl. half-bead overhang)' : '';
     result.innerHTML = `
-      <p class="bead-count"><strong>${size.cols}</strong> beads across × <strong>${size.rows}</strong> rows</p>
+      <p class="bead-count"><strong>${settings.cols}</strong> beads across × <strong>${settings.rows}</strong> rows</p>
       <p>Real finished size: ${formatLength(size.realWidthMm, unit)}${overhangNote}
         × ${formatLength(size.realHeightMm, unit)}</p>
     `;

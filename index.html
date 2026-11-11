@@ -14,6 +14,7 @@
           <a href="#chart">Chart</a>
           <a href="#charts">My charts</a>
           <a href="#stash">My stash</a>
+          <a href="#calibration">Calibration</a>
         </nav>
       </header>
 
@@ -122,6 +123,27 @@
           </div>
           <p id="backup-status" class="note" aria-live="polite"></p>
         </div>
+      </section>
+
+      <section id="calibration-view" hidden>
+        <h2>Calibration</h2>
+        <p class="note">
+          Real beadwork usually comes out a little bigger than the bead specs, because of
+          thread and tension. Measure a piece you've made and the app will use your numbers
+          for that bead size and stitch.
+        </p>
+        <ul class="note calibration-tips">
+          <li>Count at least 10 beads or rows: the more, the more accurate.</li>
+          <li><strong>Width:</strong> measure along one row, from the edge of the first bead to the edge of the last.
+            In brick stitch, don't include the half-bead step of the next row.</li>
+          <li><strong>Height:</strong> measure a number of rows from top to bottom.</li>
+          <li>You can fill in just one of the two. The other keeps using the spec.</li>
+        </ul>
+        <p class="note">
+          Saved charts keep their bead counts; their finished size is worked out again with your measurements.
+        </p>
+        <!-- Filled in by src/calibration-screen.js -->
+        <div id="calibration-list" class="calibration-list"></div>
       </section>
 
       <section id="stash-view" hidden>
@@ -242,6 +264,39 @@
         </div>
       </dialog>
 
+      <!-- Pick a colour from a photo of my beads (src/photo-color-picker.js) -->
+      <dialog id="pick-color-dialog" class="pick-color-dialog">
+        <h3>Pick colour from photo</h3>
+        <ul class="note pick-tips">
+          <li>Take the photo in <strong>daylight</strong>, not under a lamp.</li>
+          <li>Put the beads on <strong>white paper</strong>.</li>
+          <li>Avoid <strong>shiny reflections</strong>: pick an area without bright highlights.</li>
+        </ul>
+        <div class="pick-toolbar">
+          <button type="button" data-action="zoom-out" aria-label="Zoom out">−</button>
+          <span class="pick-zoom-label zoom-label">100%</span>
+          <button type="button" data-action="zoom-in" aria-label="Zoom in">+</button>
+          <button type="button" data-action="fit">Fit</button>
+          <button type="button" data-action="choose-photo">Choose another photo…</button>
+          <input type="file" accept="image/*" hidden />
+        </div>
+        <div class="pick-viewport">
+          <div class="pick-stage">
+            <!-- the photo (a canvas) is put here -->
+            <div class="pick-selection" hidden></div>
+          </div>
+        </div>
+        <p class="note">Zoom in, then click on the beads or drag over a small area. The average colour of the area is used.</p>
+        <div class="pick-compare">
+          <span>Current <span class="swatch-inline pick-swatch pick-current"></span></span>
+          <span>Picked <span class="swatch-inline pick-swatch pick-picked empty"></span> <code class="pick-hex"></code></span>
+        </div>
+        <div class="dialog-buttons">
+          <button type="button" data-action="cancel">Cancel</button>
+          <button type="button" class="primary" data-action="use">Use this colour</button>
+        </div>
+      </dialog>
+
       <!-- Pop-up forms for colours (src/color-dialogs.js) -->
 
       <dialog id="custom-color-dialog">
@@ -251,10 +306,13 @@
             Name
             <input type="text" name="name" required maxlength="80" placeholder="e.g. Grandma's teal" />
           </label>
-          <label>
-            Screen colour
-            <input type="color" name="hex" value="#888888" />
-          </label>
+          <div class="color-field">
+            <label>
+              Screen colour
+              <input type="color" name="hex" value="#888888" />
+            </label>
+            <button type="button" data-action="pick-photo">Pick from photo…</button>
+          </div>
           <fieldset>
             <legend>Sizes</legend>
             <label><input type="checkbox" name="sizes" value="11/0" /> 11/0</label>
@@ -281,10 +339,13 @@
         <form class="dialog-form">
           <h3>Edit screen colour</h3>
           <p class="dialog-color-name"></p>
-          <label>
-            Screen colour
-            <input type="color" name="hex" />
-          </label>
+          <div class="color-field">
+            <label>
+              Screen colour
+              <input type="color" name="hex" />
+            </label>
+            <button type="button" data-action="pick-photo">Pick from photo…</button>
+          </div>
           <p class="note">
             Estimated colour: <span class="swatch-inline estimated-swatch"></span>
             <span class="estimated-hex"></span>

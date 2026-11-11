@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   stash: `${PREFIX}stash`,
   customColors: `${PREFIX}customColors`,
   overrides: `${PREFIX}colorOverrides`,
+  calibration: `${PREFIX}calibration`,
   lastChoices: `${PREFIX}lastChoices`,
   view: `${PREFIX}view`, // zoom, grid lines, numbers
   currentChartId: `${PREFIX}currentChart`,
@@ -107,6 +108,23 @@ function isValidCustomColors(custom) {
   );
 }
 
+// Calibration (from PLAN.md): [{ beadSize, stitch, mmPerColumn, mmPerRow }, …]
+// mmPerColumn / mmPerRow can be null: that direction uses the spec value.
+export function isValidCalibrationList(list) {
+  const isMm = (value) => value === null || isPositiveNumber(value);
+  return (
+    Array.isArray(list) &&
+    list.every(
+      (entry) =>
+        isObject(entry) &&
+        ['loom', 'brick'].includes(entry.stitch) &&
+        Object.hasOwn(BEAD_SIZES, entry.beadSize) &&
+        isMm(entry.mmPerColumn) &&
+        isMm(entry.mmPerRow),
+    )
+  );
+}
+
 function isValidOverrides(overrides) {
   return isObject(overrides) && Object.values(overrides).every((hex) => HEX.test(hex));
 }
@@ -190,6 +208,7 @@ export function makeBackup() {
     stash: load(STORAGE_KEYS.stash) ?? {},
     customColors: load(STORAGE_KEYS.customColors) ?? { nextNumber: 1, colors: [] },
     colorOverrides: load(STORAGE_KEYS.overrides) ?? {},
+    calibration: load(STORAGE_KEYS.calibration) ?? [],
   };
 }
 
@@ -224,6 +243,7 @@ export function describeData(data) {
     `${plural(stashTotal, 'stash colour')} (${perSize})`,
     plural(data.customColors.colors.length, 'custom colour'),
     plural(Object.keys(data.colorOverrides).length, 'colour edit'),
+    plural(data.calibration?.length ?? 0, 'calibration'),
   ].join(', ');
 }
 
@@ -248,6 +268,10 @@ export function checkBackup(data) {
   if (!isValidStash(data.stash)) return { ok: false, error: 'The stash in the backup is damaged.' };
   if (!isValidCustomColors(data.customColors)) return { ok: false, error: 'The custom colours in the backup are damaged.' };
   if (!isValidOverrides(data.colorOverrides)) return { ok: false, error: 'The colour edits in the backup are damaged.' };
+  // Older backups have no calibration: that's fine.
+  if (data.calibration !== undefined && !isValidCalibrationList(data.calibration)) {
+    return { ok: false, error: 'The calibration in the backup is damaged.' };
+  }
   return { ok: true, summary: describeData(data) };
 }
 
@@ -268,6 +292,7 @@ export function restoreBackup(data) {
     localStorage.setItem(STORAGE_KEYS.stash, JSON.stringify(data.stash));
     localStorage.setItem(STORAGE_KEYS.customColors, JSON.stringify(data.customColors));
     localStorage.setItem(STORAGE_KEYS.overrides, JSON.stringify(data.colorOverrides));
+    localStorage.setItem(STORAGE_KEYS.calibration, JSON.stringify(data.calibration ?? []));
     const current = data.charts.some((chart) => chart.id === data.currentChartId)
       ? data.currentChartId
       : data.charts[0]?.id ?? null;

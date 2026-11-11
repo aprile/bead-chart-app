@@ -6,6 +6,7 @@ import { setupStashScreen } from './stash-screen.js';
 import { setupChartsScreen } from './charts-screen.js';
 import { setupViews } from './views.js';
 import { setupPhotoImport } from './photo.js';
+import { setupCalibrationScreen } from './calibration-screen.js';
 import { setupChartView } from './chart-view.js';
 import { countMissingBeads } from './colors.js';
 import { loadSavedChart, listSavedCharts, getCurrentChartId, setCurrentChartId } from './storage.js';
@@ -190,6 +191,7 @@ setupAutosave((state) => {
 // ---------- Other screens ----------
 
 setupStashScreen(document.querySelector('#stash-view'));
+setupCalibrationScreen(document.querySelector('#calibration-view'));
 
 const chartsScreen = setupChartsScreen(document.querySelector('#charts-view'), {
   getOpenChartId: () => chart.getChart().id,
@@ -227,6 +229,11 @@ if (lastChart) {
 
 // Shows the right view now, and again whenever you switch.
 views = setupViews((name) => {
-  if (name === 'chart') redraw(); // also picks up stash changes in the palette
+  if (name === 'chart') {
+    // Coming back from another screen: the stash (palette) or my calibration
+    // (finished size, bead shapes) may have changed.
+    panel.showChart(chart.getChart());
+    redraw();
+  }
   if (name === 'charts') chartsScreen.render();
 });

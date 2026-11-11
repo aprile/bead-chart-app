@@ -12,9 +12,24 @@ import { nearestColor } from './color-math.js';
 import { getChart, countColor, replaceColorEverywhere } from './chart.js';
 import { countColorInSavedCharts, replaceColorInSavedCharts } from './storage.js';
 import { escapeHtml } from './html.js';
+import { setupPhotoColorPicker } from './photo-color-picker.js';
 
 // onChange() runs after anything is saved, so the stash list can refresh.
 export function setupColorDialogs(onChange) {
+  // "Pick from photo…" in both colour forms: the picked colour goes into the
+  // form's colour box. It's only saved when I click Save in that form.
+  const picker = setupPhotoColorPicker();
+  for (const form of document.querySelectorAll('#custom-color-dialog form, #screen-color-dialog form')) {
+    form.querySelector('[data-action="pick-photo"]').addEventListener('click', () => {
+      picker.open({
+        currentHex: form.elements.hex.value,
+        onPickColor: (hex) => {
+          form.elements.hex.value = hex;
+        },
+      });
+    });
+  }
+
   // ---------- Add / edit custom colour ----------
   const customDialog = document.querySelector('#custom-color-dialog');
   const customForm = customDialog.querySelector('form');

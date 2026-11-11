@@ -6,7 +6,7 @@ import {
   downloadBackup, checkBackup, restoreBackup, describeData, describeCurrentData,
 } from './storage.js';
 import { flushSave, cancelPendingSave, pauseAutosave, resumeAutosave } from './autosave.js';
-import { calculateChartSize, formatLength } from './sizing.js';
+import { realSize, formatLength } from './sizing.js';
 import { drawPreview } from './grid.js';
 import { DEFAULT_NAME } from './chart.js';
 import { escapeHtml } from './html.js';
@@ -18,7 +18,7 @@ const STORAGE_FULL = "Couldn't save: the browser's storage is full. Export a bac
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
 function itemHtml(chart, isOpen) {
-  const size = calculateChartSize(chart);
+  const size = realSize(chart); // from its bead counts, with my calibration
   return `
     <li data-id="${escapeHtml(chart.id)}">
       <div class="chart-preview"><canvas></canvas></div>
