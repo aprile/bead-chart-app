@@ -1,8 +1,14 @@
 // The "New chart" form: reads what you type and shows the bead count.
 
 import { calculateChartSize } from './sizing.js';
+import { BEAD_SIZES } from './beads.js';
+import { load, save } from './storage.js';
 
 const MM_PER_UNIT = { mm: 1, cm: 10 };
+
+// The last stitch and bead size I picked, remembered across refreshes.
+// Saved shape: { stitch: "brick", beadSize: "15/0" }
+const CHOICES_KEY = 'bead-chart-app.lastChoices';
 
 // Show a mm value in the chosen unit, e.g. 20.4 mm → "2.04 cm".
 function formatLength(mm, unit) {
@@ -16,6 +22,15 @@ function formatLength(mm, unit) {
 export function setupNewChartPanel(form, { onChange, onEditEnd }) {
   const result = form.querySelector('#size-result');
   const fields = form.elements; // every named input, e.g. fields.width
+
+  function saveChoices() {
+    save(CHOICES_KEY, { stitch: fields.stitch.value, beadSize: fields.beadSize.value });
+  }
+
+  // Put back the saved choices, but only if they're still valid options.
+  const saved = load(CHOICES_KEY);
+  if (['loom', 'brick'].includes(saved?.stitch)) fields.stitch.value = saved.stitch;
+  if (saved?.beadSize in BEAD_SIZES) fields.beadSize.value = saved.beadSize;
 
   // Read the form. Returns null if the width or height isn't a number above 0.
   function readSettings() {
@@ -47,6 +62,7 @@ export function setupNewChartPanel(form, { onChange, onEditEnd }) {
 
   // 'input' fires on every keystroke and every radio/select change.
   form.addEventListener('input', () => {
+    saveChoices();
     const settings = readSettings();
     if (!settings) {
       result.textContent = 'Enter a width and height above 0.';
@@ -72,6 +88,7 @@ export function setupNewChartPanel(form, { onChange, onEditEnd }) {
       fields.beadSize.value = chart.beadSize;
       fields.width.value = Number((chart.widthMm / MM_PER_UNIT[unit]).toFixed(4));
       fields.height.value = Number((chart.heightMm / MM_PER_UNIT[unit]).toFixed(4));
+      saveChoices(); // undo/redo can change the stitch or size too
       showResult(chart);
     },
   };

@@ -1,6 +1,6 @@
 // The palette above the chart: my stash colours in the chart's bead size.
 
-import { getColor, stashColors } from './colors.js';
+import { getColor, stashColors, colorLabel } from './colors.js';
 import { escapeHtml } from './html.js';
 
 export function setupPalette(container) {
@@ -21,7 +21,7 @@ export function setupPalette(container) {
       button.setAttribute('aria-pressed', id === selectedId);
     }
     const color = selectedId && getColor(selectedId);
-    selectedName.textContent = color ? `${color.code} ${color.name}` : 'Eraser';
+    selectedName.textContent = color ? colorLabel(color) : 'Eraser';
   }
 
   // (Re)build the swatches for a bead size. Called whenever the chart is redrawn,
@@ -38,7 +38,7 @@ export function setupPalette(container) {
     } else {
       swatches.innerHTML = colors
         .map((color) => {
-          const label = escapeHtml(`${color.code} ${color.name}`);
+          const label = escapeHtml(colorLabel(color));
           return `<button type="button" class="swatch" data-color-id="${escapeHtml(color.id)}"
             style="--swatch: ${escapeHtml(color.hex)}" title="${label}" aria-label="${label}"></button>`;
         })

@@ -101,6 +101,25 @@ export function endResize() {
   resizeBase = null;
 }
 
+// ---- Colours used in the chart ----
+
+export function countColor(colorId) {
+  return chart.beads.flat().filter((bead) => bead === colorId).length;
+}
+
+// Swap one colour for another in the chart AND in the undo/redo history,
+// so undo can never bring back a colour that's been deleted.
+export function replaceColorEverywhere(oldId, newId) {
+  endResize();
+  for (const version of [chart, ...undoStack, ...redoStack]) {
+    for (const row of version.beads) {
+      row.forEach((bead, col) => {
+        if (bead === oldId) row[col] = newId;
+      });
+    }
+  }
+}
+
 // ---- Clear, undo, redo ----
 
 export function isEmpty() {

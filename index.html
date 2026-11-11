@@ -76,7 +76,10 @@
       <section id="stash-view" hidden>
         <h2>My stash</h2>
         <p class="note">Screen colours are rough guesses from the colour names.</p>
-        <p id="stash-counts" class="stash-counts"></p>
+        <div class="stash-top">
+          <p id="stash-counts" class="stash-counts"></p>
+          <button type="button" id="add-color-button" class="primary">Add colour</button>
+        </div>
 
         <div class="stash-filters">
           <label>
@@ -108,6 +111,79 @@
         <!-- Filled in by src/stash-screen.js -->
         <ul id="stash-list" class="stash-list"></ul>
       </section>
+
+      <!-- Pop-up forms for colours (src/color-dialogs.js) -->
+
+      <dialog id="custom-color-dialog">
+        <form class="dialog-form">
+          <h3 class="dialog-title">Add colour</h3>
+          <label>
+            Name
+            <input type="text" name="name" required maxlength="80" placeholder="e.g. Grandma's teal" />
+          </label>
+          <label>
+            Screen colour
+            <input type="color" name="hex" value="#888888" />
+          </label>
+          <fieldset>
+            <legend>Sizes</legend>
+            <label><input type="checkbox" name="sizes" value="11/0" /> 11/0</label>
+            <label><input type="checkbox" name="sizes" value="15/0" /> 15/0</label>
+          </fieldset>
+          <label>
+            Code (optional)
+            <input type="text" name="code" maxlength="20" />
+          </label>
+          <label>
+            Notes (optional)
+            <textarea name="notes" rows="2" maxlength="500" placeholder="e.g. brand, where I bought it"></textarea>
+          </label>
+          <p class="form-error" hidden></p>
+          <div class="dialog-buttons">
+            <button type="button" class="danger" data-action="delete">Delete</button>
+            <button type="button" data-action="cancel">Cancel</button>
+            <button type="submit" class="primary">Save</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="screen-color-dialog">
+        <form class="dialog-form">
+          <h3>Edit screen colour</h3>
+          <p class="dialog-color-name"></p>
+          <label>
+            Screen colour
+            <input type="color" name="hex" />
+          </label>
+          <p class="note">
+            Estimated colour: <span class="swatch-inline estimated-swatch"></span>
+            <span class="estimated-hex"></span>
+          </p>
+          <div class="dialog-buttons">
+            <button type="button" data-action="reset">Reset to estimated colour</button>
+            <button type="button" data-action="cancel">Cancel</button>
+            <button type="submit" class="primary">Save</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="delete-color-dialog">
+        <form class="dialog-form">
+          <h3>Delete colour?</h3>
+          <p class="delete-message"></p>
+          <label>
+            Replace those beads with
+            <span class="replacement-row">
+              <span class="swatch-inline replacement-swatch"></span>
+              <select name="replacement"></select>
+            </span>
+          </label>
+          <div class="dialog-buttons">
+            <button type="button" data-action="cancel">Cancel</button>
+            <button type="submit" class="danger">Delete and replace</button>
+          </div>
+        </form>
+      </dialog>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>

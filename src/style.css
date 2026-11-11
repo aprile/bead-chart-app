@@ -72,7 +72,7 @@ body {
   gap: 8px;
 }
 
-.toolbar button {
+button {
   font: inherit;
   font-size: 0.875rem;
   color: var(--text);
@@ -83,7 +83,7 @@ body {
   cursor: pointer;
 }
 
-.toolbar button:disabled {
+button:disabled {
   opacity: 0.4;
   cursor: default;
 }
@@ -293,7 +293,7 @@ a {
 
 .stash-list li {
   display: grid;
-  grid-template-columns: 28px 4.5em 1fr auto;
+  grid-template-columns: 28px 4.5em 1fr auto auto;
   align-items: center;
   gap: 12px;
   padding: 8px 4px;
@@ -335,4 +335,152 @@ a {
   gap: 4px;
   font-size: 0.875rem;
   cursor: pointer;
+}
+
+/* Anything with the hidden attribute stays hidden, whatever else its CSS says */
+[hidden] {
+  display: none !important;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+button.danger {
+  color: #c62828;
+  border-color: currentColor;
+}
+
+.stash-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stash-top .stash-counts {
+  margin: 0;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  vertical-align: middle;
+}
+
+.stash-list .row-action {
+  padding: 4px 10px;
+}
+
+/* ---- Pop-up forms ---- */
+
+dialog {
+  width: min(420px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+}
+
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.4);
+}
+
+.dialog-form h3 {
+  margin: 0 0 12px;
+}
+
+.dialog-form > label,
+.dialog-form fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 12px;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.dialog-form fieldset {
+  flex-direction: row;
+  gap: 16px;
+}
+
+.dialog-form fieldset label {
+  color: var(--text);
+}
+
+.dialog-form input[type='text'],
+.dialog-form textarea,
+.dialog-form select {
+  font: inherit;
+  color: var(--text);
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+.dialog-form input[type='color'] {
+  width: 64px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+.dialog-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* Delete sits on its own on the left */
+.dialog-buttons .danger[data-action='delete'] {
+  margin-right: auto;
+}
+
+.form-error {
+  color: #c62828;
+  margin: 0;
+}
+
+.swatch-inline {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--muted);
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.swatch-inline.empty {
+  border-style: dashed;
+}
+
+.replacement-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.replacement-row select {
+  flex: 1;
+  min-width: 0;
 }
