@@ -1,6 +1,8 @@
 // Everything about saving: localStorage, saved charts, and the backup file.
 
 import { BEAD_SIZES } from './beads.js';
+import { isStitch } from './stitches/index.js';
+import { CHART_VERSION, upgradeChart } from './migrate.js';
 
 // All localStorage keys start with this, so they don't mix with anything else.
 const PREFIX = 'bead-chart-app.';
@@ -48,6 +50,8 @@ function allKeys() {
 }
 
 // ---------- Checking data is the right shape ----------
+// Charts are upgraded (migrate.js) BEFORE they're checked, so these checks
+// only need to know the newest shape.
 
 const HEX = /^#[0-9a-f]{6}$/i;
 const SIZE_NAMES = Object.keys(BEAD_SIZES);
@@ -64,8 +68,10 @@ export function isValidChart(chart) {
   return (
     isObject(chart) &&
     typeof chart.id === 'string' &&
+    chart.version === CHART_VERSION &&
     typeof chart.name === 'string' &&
-    ['loom', 'brick'].includes(chart.stitch) &&
+    isStitch(chart.stitch) &&
+    HEX.test(chart.background) &&
     Object.hasOwn(BEAD_SIZES, chart.beadSize) &&
     isPositiveNumber(chart.widthMm) &&
     isPositiveNumber(chart.heightMm) &&
@@ -117,7 +123,7 @@ export function isValidCalibrationList(list) {
     list.every(
       (entry) =>
         isObject(entry) &&
-        ['loom', 'brick'].includes(entry.stitch) &&
+        isStitch(entry.stitch) &&
         Object.hasOwn(BEAD_SIZES, entry.beadSize) &&
         isMm(entry.mmPerColumn) &&
         isMm(entry.mmPerRow),
@@ -135,14 +141,14 @@ function isValidOverrides(overrides) {
 export function listSavedCharts() {
   return allKeys()
     .filter((key) => key.startsWith(CHART_PREFIX))
-    .map(load)
+    .map((key) => upgradeChart(load(key)))
     .filter(isValidChart) // a damaged chart is skipped rather than crashing the app
     .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 }
 
 export function loadSavedChart(id) {
   if (typeof id !== 'string') return null;
-  const chart = load(CHART_PREFIX + id);
+  const chart = upgradeChart(load(CHART_PREFIX + id));
   return isValidChart(chart) ? chart : null;
 }
 
@@ -196,7 +202,9 @@ export function replaceColorInSavedCharts(oldId, newId, exceptId) {
 
 // ---------- Backup file ----------
 
-export const BACKUP_VERSION = 1;
+// Version 2 backups have version 2 charts. Version 1 backups still import:
+// their charts are upgraded on the way in.
+export const BACKUP_VERSION = 2;
 
 export function makeBackup() {
   return {
@@ -263,7 +271,7 @@ export function checkBackup(data) {
     return { ok: false, error: 'This backup was made by a newer version of the app.' };
   }
   if (!Array.isArray(data.charts)) return { ok: false, error: 'The backup has no chart list.' };
-  const broken = data.charts.findIndex((chart) => !isValidChart(chart));
+  const broken = data.charts.findIndex((chart) => !isValidChart(upgradeChart(chart)));
   if (broken !== -1) return { ok: false, error: `Chart number ${broken + 1} in the backup is damaged.` };
   if (!isValidStash(data.stash)) return { ok: false, error: 'The stash in the backup is damaged.' };
   if (!isValidCustomColors(data.customColors)) return { ok: false, error: 'The custom colours in the backup are damaged.' };
@@ -287,7 +295,7 @@ export function restoreBackup(data) {
   try {
     keysToReplace.forEach((key) => localStorage.removeItem(key));
     for (const chart of data.charts) {
-      localStorage.setItem(CHART_PREFIX + chart.id, JSON.stringify(chart));
+      localStorage.setItem(CHART_PREFIX + chart.id, JSON.stringify(upgradeChart(chart)));
     }
     localStorage.setItem(STORAGE_KEYS.stash, JSON.stringify(data.stash));
     localStorage.setItem(STORAGE_KEYS.customColors, JSON.stringify(data.customColors));

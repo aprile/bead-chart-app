@@ -5,6 +5,7 @@
 // scrolling and zoom). So it's never huge, and stays sharp at any zoom.
 
 import { beadSpacing } from './sizing.js';
+import { getStitch } from './stitches/index.js';
 import { getColor, isMissingColor } from './colors.js';
 
 // The starting bead size, measured on the bead's shorter side, in CSS pixels.
@@ -14,7 +15,7 @@ const MIN_BEAD_PX = 14;
 const MAX_BEAD_PX = 48;
 
 const EMPTY_FILL = '#d6d4d9';
-// Grid lines (loom only): light grey, with every 10th line darker and thicker.
+// Grid lines (only for stitches without offsets): light grey, with every 10th line darker and thicker.
 const GRID_LINE = '#c2bec8';
 const GRID_LINE_10TH = '#8a8592';
 // A colour that no longer exists: white with a red cross, easy to spot.
@@ -23,17 +24,18 @@ const MISSING_MARK = '#d32f2f';
 
 // ---------- Sizes ----------
 
-// The chart's real size in mm (brick includes the half-bead overhang).
+// The chart's real size in mm, including any overhang from offset beads
+// (e.g. brick stitch is half a bead wider). `stitch` is the stitch module.
 export function chartSizeMm(chart) {
+  const stitch = getStitch(chart.stitch);
   const { columnWidth, rowHeight } = beadSpacing(chart.stitch, chart.beadSize);
-  const isBrick = chart.stitch === 'brick';
   return {
-    isBrick,
+    stitch,
     columnWidth,
     rowHeight,
     smallerMm: Math.min(columnWidth, rowHeight),
-    widthMm: (chart.cols + (isBrick ? 0.5 : 0)) * columnWidth,
-    heightMm: chart.rows * rowHeight,
+    widthMm: (chart.cols + stitch.overhang.across) * columnWidth,
+    heightMm: (chart.rows + stitch.overhang.down) * rowHeight,
   };
 }
 
@@ -56,12 +58,12 @@ export function autoScale(chart, availWidth, availHeight) {
 // clipX: beads are hidden left of this; clipBottom: hidden in this many pixels
 // at the bottom (that's where the row and column numbers go).
 export function makeLayout(chart, scale, { originX, originY, clipX, clipBottom, gridLines, numbers }) {
-  const { columnWidth, rowHeight, isBrick } = chartSizeMm(chart);
+  const { columnWidth, rowHeight, stitch } = chartSizeMm(chart);
   const beadW = columnWidth * scale;
   const beadH = rowHeight * scale;
   const smaller = Math.min(beadW, beadH);
   return {
-    isBrick,
+    stitch,
     cols: chart.cols,
     rows: chart.rows,
     beadW,
@@ -71,7 +73,7 @@ export function makeLayout(chart, scale, { originX, originY, clipX, clipBottom, 
     clipX,
     clipBottom,
     numbers,
-    gridLines: gridLines && !isBrick, // lines between rows and columns: loom only
+    gridLines: gridLines && stitch.gridLines, // lines between rows and columns, if the stitch has them
     gap: smaller < 6 ? 0 : Math.max(1, smaller * 0.08), // small gap between beads
     radius: smaller * 0.35, // rounded corners
     rounded: smaller >= 5,
@@ -89,10 +91,10 @@ function fillFor(colorId) {
 }
 
 // Top-left corner of a bead's cell, measured from the chart's top-left corner.
-// Brick stitch: odd rows (the 2nd, 4th…) are shifted right by half a bead.
+// The stitch module says how far the bead is shifted (e.g. brick rows).
 function cellPosition(layout, row, col) {
-  const shift = layout.isBrick && row % 2 === 1 ? layout.beadW / 2 : 0;
-  return { x: col * layout.beadW + shift, y: row * layout.beadH };
+  const offset = layout.stitch.cellOffset(row, col);
+  return { x: (col + offset.x) * layout.beadW, y: (row + offset.y) * layout.beadH };
 }
 
 function addBeadShape(path, layout, row, col) {
@@ -122,7 +124,7 @@ function strokeMissingMarks(ctx, path) {
   ctx.stroke(path);
 }
 
-// Grid lines between the rows and columns in `range` (loom only).
+// Grid lines between the rows and columns in `range` (only for stitches without offsets).
 // Every 10th line, counted from the bottom left like the numbers, is darker.
 // Positions are rounded to whole screen pixels so the lines stay crisp.
 function drawGridLines(ctx, layout, { firstRow, lastRow, firstCol, lastCol }) {
@@ -174,9 +176,9 @@ function clipToChartArea(ctx, layout) {
 function visibleRange(layout) {
   const { beadW, beadH, originX, originY, clipX, width } = layout;
   return {
-    firstRow: Math.max(0, Math.floor(-originY / beadH)),
+    // one extra row above and column on the left, for beads shifted by an offset
+    firstRow: Math.max(0, Math.floor(-originY / beadH) - 1),
     lastRow: Math.min(layout.rows - 1, Math.floor((chartBottom(layout) - originY) / beadH)),
-    // one extra column on the left, for brick rows shifted by half a bead
     firstCol: Math.max(0, Math.floor((clipX - originX) / beadW) - 1),
     lastCol: Math.min(layout.cols - 1, Math.floor((width - originX) / beadW)),
   };
@@ -258,16 +260,16 @@ function drawNumbers(ctx, layout) {
   ctx.font = '11px system-ui, sans-serif';
   ctx.textBaseline = 'middle';
 
-  // Column numbers line up with the bottom row (row 1), which in brick
-  // stitch may be one of the shifted rows.
-  const bottomRowShift = layout.isBrick && (rows - 1) % 2 === 1 ? beadW / 2 : 0;
+  // Column numbers line up with the bottom row (row 1), which may be
+  // shifted (e.g. in brick stitch).
+  const bottomRow = rows - 1;
   ctx.save();
   ctx.beginPath();
   ctx.rect(left, bottom, width - left, height - bottom);
   ctx.clip();
   ctx.textAlign = 'center';
   for (let col = firstCol; col <= lastCol; col++) {
-    const x = originX + bottomRowShift + col * beadW + beadW / 2;
+    const x = originX + cellPosition(layout, bottomRow, col).x + beadW / 2;
     if (shows(col + 1, colEvery)) ctx.fillText(col + 1, x, (bottom + height) / 2);
   }
   ctx.restore();
@@ -312,15 +314,23 @@ export function drawBead(canvas, layout, row, col, colorId) {
 // (e.g. on the numbers, or the empty half-bead at the end of a brick row).
 export function beadAtPoint(layout, x, y) {
   if (x < layout.clipX || y > chartBottom(layout)) return null;
+  const { beadW, beadH } = layout;
   const chartX = x - layout.originX;
   const chartY = y - layout.originY;
-  const row = Math.floor(chartY / layout.beadH);
-  if (row < 0 || row >= layout.rows) return null;
-  // Undo the brick shift for this row before working out the column.
-  const shift = layout.isBrick && row % 2 === 1 ? layout.beadW / 2 : 0;
-  const col = Math.floor((chartX - shift) / layout.beadW);
-  if (col < 0 || col >= layout.cols) return null;
-  return { row, col };
+  // Beads can be shifted by up to a bead, so check the cells around the
+  // point on the plain grid and see which one (if any) the point is inside.
+  const nearRow = Math.floor(chartY / beadH);
+  const nearCol = Math.floor(chartX / beadW);
+  for (let row = nearRow - 1; row <= nearRow + 1; row++) {
+    if (row < 0 || row >= layout.rows) continue;
+    for (let col = nearCol - 1; col <= nearCol + 1; col++) {
+      if (col < 0 || col >= layout.cols) continue;
+      const cell = cellPosition(layout, row, col);
+      const inside = chartX >= cell.x && chartX < cell.x + beadW && chartY >= cell.y && chartY < cell.y + beadH;
+      if (inside) return { row, col };
+    }
+  }
+  return null;
 }
 
 // ---------- Small previews ----------
@@ -341,7 +351,7 @@ export function drawPreview(canvas, chart, maxWidth, maxHeight, fillOf = null) {
   canvas.width = Math.round(cssWidth * ratio);
   canvas.height = Math.round(cssHeight * ratio);
 
-  const layout = { isBrick: size.isBrick, beadW: size.columnWidth * scale, beadH: size.rowHeight * scale };
+  const layout = { stitch: size.stitch, beadW: size.columnWidth * scale, beadH: size.rowHeight * scale };
   const ctx = canvas.getContext('2d');
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 

@@ -1,10 +1,14 @@
 // The chart data (which colour is in each bead) and the undo/redo history.
 // No drawing happens here: grid.js does that.
 //
-// Chart shape (from PLAN.md, plus an id and dates for saving):
-// { id, name, stitch, beadSize, widthMm, heightMm, cols, rows,
+// Chart shape (from PLAN-V2.md, plus an id and dates for saving):
+// { id, version: 2, name, stitch, beadSize, widthMm, heightMm, cols, rows,
 //   beads: [[color id or null, ...], ...],   ← beads[row][col], null = empty
+//   background,                               ← e.g. "#faf9f7"
 //   createdAt, updatedAt }                    ← times in milliseconds
+// Older (v1) charts are upgraded when they're loaded: see migrate.js.
+
+import { CHART_VERSION, DEFAULT_BACKGROUND } from './migrate.js';
 
 export const DEFAULT_NAME = 'Untitled chart';
 
@@ -70,6 +74,7 @@ export function newChart(settings, name = DEFAULT_NAME) {
   const now = Date.now();
   chart = {
     id: crypto.randomUUID(), // a long random id, unique to this chart
+    version: CHART_VERSION,
     name,
     stitch: settings.stitch,
     beadSize: settings.beadSize,
@@ -78,6 +83,7 @@ export function newChart(settings, name = DEFAULT_NAME) {
     cols: settings.cols,
     rows: settings.rows,
     beads: emptyBeads(settings.cols, settings.rows),
+    background: DEFAULT_BACKGROUND,
     createdAt: now,
     updatedAt: now,
   };

@@ -10,8 +10,8 @@ import { realSize, formatLength } from './sizing.js';
 import { drawPreview } from './grid.js';
 import { DEFAULT_NAME } from './chart.js';
 import { escapeHtml } from './html.js';
+import { getStitch } from './stitches/index.js';
 
-const STITCH_NAMES = { loom: 'Loom', brick: 'Brick stitch' };
 const STORAGE_FULL = "Couldn't save: the browser's storage is full. Export a backup, then delete some charts.";
 
 // e.g. "11 Nov 2026, 15:42", in your computer's language and time zone.
@@ -26,7 +26,7 @@ function itemHtml(chart, isOpen) {
         <strong>${escapeHtml(chart.name || DEFAULT_NAME)}</strong>
         ${isOpen ? '<span class="badge">open</span>' : ''}
         <span class="note">
-          ${STITCH_NAMES[chart.stitch]} · ${chart.beadSize} ·
+          ${getStitch(chart.stitch).label} · ${chart.beadSize} ·
           ${formatLength(size.realWidthMm, 'cm')} × ${formatLength(size.realHeightMm, 'cm')}
           (${chart.cols} × ${chart.rows} beads)
         </span>

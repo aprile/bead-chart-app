@@ -7,24 +7,11 @@
 // - measured: what I typed, e.g. { columns: { beads: 20, mm: 41 }, rows: null },
 //   so the form can show it again.
 
-import { BEAD_SIZES } from './beads.js';
 import { load, save, STORAGE_KEYS, isValidCalibrationList } from './storage.js';
-
-export const STITCHES = ['loom', 'brick'];
-export const STITCH_NAMES = { loom: 'Loom', brick: 'Brick stitch' };
 
 // A measured bead must be between these sizes, to catch typing mistakes.
 export const MIN_MM_PER_BEAD = 0.5;
 export const MAX_MM_PER_BEAD = 5;
-
-// Spacing from the published specs (see PLAN.md):
-// Loom: holes run sideways, so a column is as wide as the bead's thickness.
-// Brick: holes run up and down, so a column is as wide as the bead's diameter.
-export function specSpacing(stitch, beadSize) {
-  const bead = BEAD_SIZES[beadSize];
-  if (stitch === 'loom') return { columnWidth: bead.thickness, rowHeight: bead.diameter };
-  return { columnWidth: bead.diameter, rowHeight: bead.thickness };
-}
 
 function loadCalibrations() {
   const saved = load(STORAGE_KEYS.calibration);

@@ -1,6 +1,7 @@
 // Turns part of a photo into one colour per bead, and adjusts those colours.
 
 import { beadSpacing } from './sizing.js';
+import { getStitch } from './stitches/index.js';
 import { rgbToLab } from './color-math.js';
 
 // Largest photo side we keep. Big phone photos are shrunk to this once,
@@ -11,13 +12,16 @@ const MAX_PHOTO_SIDE = 2400;
 // looking for a bead's most common colour.
 const SAME_COLOR = 10;
 
-// The chart's real shape, as drawn (brick includes the half-bead overhang).
+// The chart's real shape, as drawn, including any overhang from offset
+// beads (e.g. brick stitch is half a bead wider).
 export function chartShape(chart) {
   const { columnWidth, rowHeight } = beadSpacing(chart.stitch, chart.beadSize);
-  const across = chart.cols + (chart.stitch === 'brick' ? 0.5 : 0); // beads across, incl. overhang
+  const { overhang } = getStitch(chart.stitch);
+  const across = chart.cols + overhang.across; // beads across, incl. overhang
+  const down = chart.rows + overhang.down; // beads down, incl. overhang
   const widthMm = across * columnWidth;
-  const heightMm = chart.rows * rowHeight;
-  return { across, widthMm, heightMm, aspect: widthMm / heightMm };
+  const heightMm = down * rowHeight;
+  return { across, down, widthMm, heightMm, aspect: widthMm / heightMm };
 }
 
 function makeCanvas(width, height) {
@@ -79,17 +83,17 @@ export function pickColorAt(photo, x, y) {
 // MOST COMMON colour, so a bead on an edge between two colours gets one of
 // them, not a muddy mix.
 export function sampleBeadColors(photo, crop, chart) {
-  const { across } = chartShape(chart);
-  const isBrick = chart.stitch === 'brick';
+  const { across, down } = chartShape(chart);
+  const stitch = getStitch(chart.stitch);
 
   // Shrink the crop so each bead covers exactly K × K pixels. K is even, so a
-  // half-bead shift is a whole number of pixels and lines up exactly with the grid.
+  // half-bead offset is a whole number of pixels and lines up exactly with the grid.
   // We skip `inset` pixels at each edge of the bead, so neighbours don't bleed in.
   // (Very big charts use fewer pixels per bead to stay quick.)
-  const beadCount = across * chart.rows;
+  const beadCount = across * down;
   const [K, inset] = beadCount <= 20000 ? [8, 1] : beadCount <= 100000 ? [6, 1] : [4, 0];
   const width = Math.round(across * K);
-  const height = chart.rows * K;
+  const height = Math.round(down * K);
   const { ctx } = resize(photo, crop.x, crop.y, crop.w, crop.h, width, height);
   const pixels = ctx.getImageData(0, 0, width, height).data; // r, g, b, a, r, g, b, a…
 
@@ -107,11 +111,11 @@ export function sampleBeadColors(photo, crop, chart) {
   const counts = new Int32Array(inner * inner); // look-alike counts, reused for every bead
   const result = [];
   for (let row = 0; row < chart.rows; row++) {
-    const shift = isBrick && row % 2 === 1 ? K / 2 : 0; // same shift as the grid drawing
     const beadRow = [];
     for (let col = 0; col < chart.cols; col++) {
-      const left = col * K + shift + inset;
-      const top = row * K + inset;
+      const offset = stitch.cellOffset(row, col); // same offset as the grid drawing
+      const left = Math.round((col + offset.x) * K) + inset;
+      const top = Math.round((row + offset.y) * K) + inset;
       let n = 0;
       for (let y = top; y < top + inner; y++) {
         for (let x = left; x < left + inner; x++) area[n++] = y * width + x;

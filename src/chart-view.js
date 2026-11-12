@@ -6,6 +6,7 @@
 // the visible part of the box, and we redraw the beads that are in view.
 
 import { autoScale, fitScale, makeLayout, drawChart, chartSizeMm } from './grid.js';
+import { getStitch } from './stitches/index.js';
 import { load, save, STORAGE_KEYS } from './storage.js';
 
 const ZOOM_STEP = 1.25; // each + or − button press
@@ -109,11 +110,11 @@ export function setupChartView(elements) {
     const { width, height } = available();
     const percent = Math.round((scale / autoScale(chart, width, height - margins().bottom)) * 100);
     elements.zoomLabel.textContent = `${percent}%`;
-    // Grid lines are for loom charts only.
-    const isLoom = chart.stitch === 'loom';
-    elements.gridLines.disabled = !isLoom;
-    elements.gridLines.checked = view.gridLines && isLoom;
-    elements.gridLines.parentElement.title = isLoom ? '' : 'Grid lines are only for loom charts';
+    // Only some stitches have grid lines (the stitch module says which).
+    const stitch = getStitch(chart.stitch);
+    elements.gridLines.disabled = !stitch.gridLines;
+    elements.gridLines.checked = view.gridLines && stitch.gridLines;
+    elements.gridLines.parentElement.title = stitch.gridLines ? '' : `Grid lines aren't available for ${stitch.label.toLowerCase()}`;
     elements.numbers.checked = view.numbers;
     elements.fit.setAttribute('aria-pressed', view.zoom === 'fit');
   }

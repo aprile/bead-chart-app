@@ -2,9 +2,9 @@
 // a measurement of beadwork I've made, e.g. "20 beads across = 41 mm".
 
 import {
-  STITCHES, STITCH_NAMES, MIN_MM_PER_BEAD, MAX_MM_PER_BEAD,
-  specSpacing, getCalibration, saveCalibration, resetCalibration,
+  MIN_MM_PER_BEAD, MAX_MM_PER_BEAD, getCalibration, saveCalibration, resetCalibration,
 } from './calibration.js';
+import { STITCHES, specSpacing } from './stitches/index.js';
 import { BEAD_SIZES } from './beads.js';
 
 const BEAD_SIZE_NAMES = Object.keys(BEAD_SIZES);
@@ -12,11 +12,12 @@ const BEAD_SIZE_NAMES = Object.keys(BEAD_SIZES);
 // Show mm with up to 3 decimals: 2.05 mm, 1.36 mm.
 const mm = (value) => `${Number(value.toFixed(3))} mm`;
 
+// stitch = a stitch module (see stitches/index.js)
 function cardHtml(stitch, beadSize) {
-  const across = stitch === 'loom' ? 'beads side by side in one row' : 'beads in one row';
+  const across = stitch.calibrationAcross;
   return `
-    <form class="panel calibration-card" data-stitch="${stitch}" data-size="${beadSize}">
-      <h3>${STITCH_NAMES[stitch]} · ${beadSize} <span class="badge calibration-status"></span></h3>
+    <form class="panel calibration-card" data-stitch="${stitch.id}" data-size="${beadSize}">
+      <h3>${stitch.label} · ${beadSize} <span class="badge calibration-status"></span></h3>
 
       <div class="calibration-row">
         <span class="calibration-label">Width</span>

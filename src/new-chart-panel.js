@@ -5,6 +5,7 @@
 import { calculateChartSize, realSize, formatLength, MM_PER_UNIT } from './sizing.js';
 import { BEAD_SIZES } from './beads.js';
 import { load, save, STORAGE_KEYS } from './storage.js';
+import { STITCHES, getStitch, isStitch } from './stitches/index.js';
 
 // The last stitch and bead size I picked, remembered across refreshes.
 // Saved shape: { stitch: "brick", beadSize: "15/0" }
@@ -16,6 +17,15 @@ const MAX_BEADS = 1000;
 // onChange(settings) runs every time the form changes to valid numbers.
 // onEditEnd() runs when you finish an edit (leave a field, click a radio…).
 export function setupNewChartPanel(form, { onChange, onEditEnd }) {
+  // One radio button per stitch module, the first one picked.
+  form.querySelector('#stitch-choices').insertAdjacentHTML(
+    'beforeend',
+    STITCHES.map(
+      (stitch, i) =>
+        `<label><input type="radio" name="stitch" value="${stitch.id}"${i === 0 ? ' checked' : ''} /> ${stitch.label}</label>`,
+    ).join(''),
+  );
+
   const result = form.querySelector('#size-result');
   const fields = form.elements; // every named input, e.g. fields.width
 
@@ -32,7 +42,7 @@ export function setupNewChartPanel(form, { onChange, onEditEnd }) {
 
   // Put back the saved choices, but only if they're still valid options.
   const saved = load(CHOICES_KEY);
-  if (['loom', 'brick'].includes(saved?.stitch)) fields.stitch.value = saved.stitch;
+  if (isStitch(saved?.stitch)) fields.stitch.value = saved.stitch;
   if (Object.hasOwn(BEAD_SIZES, saved?.beadSize)) fields.beadSize.value = saved.beadSize;
 
   // A length in mm, shown in the form's unit (2 decimals for cm, 1 for mm).
@@ -93,7 +103,8 @@ export function setupNewChartPanel(form, { onChange, onEditEnd }) {
   // so a saved chart keeps its counts even if my calibration changes.
   function showResult(settings) {
     const size = realSize(settings);
-    const overhangNote = settings.stitch === 'brick' ? ' (incl. half-bead overhang)' : '';
+    const { overhang } = getStitch(settings.stitch);
+    const overhangNote = overhang.across ? ' (incl. half-bead overhang)' : '';
     result.innerHTML = `
       <p class="bead-count"><strong>${settings.cols}</strong> beads across × <strong>${settings.rows}</strong> rows</p>
       <p>Real finished size: ${formatLength(size.realWidthMm, unit)}${overhangNote}
