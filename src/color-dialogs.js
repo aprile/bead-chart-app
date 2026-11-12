@@ -168,7 +168,7 @@ export function setupColorDialogs(onChange) {
   function showReplacementSwatch() {
     const choice = replacementChoices.find((c) => c.id === replacementSelect.value);
     replacementSwatch.style.background = choice ? choice.hex : 'transparent';
-    replacementSwatch.classList.toggle('empty', !choice);
+    replacementSwatch.classList.toggle('is-empty', !choice);
   }
   replacementSelect.addEventListener('change', showReplacementSwatch);
 

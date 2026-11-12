@@ -24,7 +24,7 @@ function itemHtml(chart, isOpen) {
       <div class="chart-preview"><canvas></canvas></div>
       <div class="chart-info">
         <strong>${escapeHtml(chart.name || DEFAULT_NAME)}</strong>
-        ${isOpen ? '<span class="badge">open</span>' : ''}
+        ${isOpen ? '<span class="v1-badge">open</span>' : ''}
         <span class="note">
           ${getStitch(chart.stitch).label} · ${chart.beadSize} ·
           ${formatLength(size.realWidthMm, 'cm')} × ${formatLength(size.realHeightMm, 'cm')}
@@ -53,7 +53,7 @@ export function setupChartsScreen(root, app) {
     flushSave(); // so the open chart's latest changes show in the list
     charts = listSavedCharts();
     if (charts.length === 0) {
-      list.innerHTML = '<li class="empty">No saved charts yet.</li>';
+      list.innerHTML = '<li class="is-empty">No saved charts yet.</li>';
       return;
     }
     list.innerHTML = charts.map((chart) => itemHtml(chart, chart.id === app.getOpenChartId())).join('');

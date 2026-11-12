@@ -26,8 +26,8 @@ function rowHtml(color) {
   // Small grey line under the name: finish for Miyuki colours, notes for custom ones.
   const details = color.custom ? color.notes ?? '' : color.finish.join(', ');
   const badges = [
-    color.custom && '<span class="badge">custom</span>',
-    color.edited && '<span class="badge">edited</span>',
+    color.custom && '<span class="v1-badge">custom</span>',
+    color.edited && '<span class="v1-badge">edited</span>',
   ]
     .filter(Boolean)
     .join(' ');

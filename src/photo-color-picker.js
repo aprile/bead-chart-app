@@ -189,7 +189,7 @@ export function setupPhotoColorPicker() {
 
   function showPicked() {
     pickedSwatch.style.background = picked ?? 'transparent';
-    pickedSwatch.classList.toggle('empty', !picked);
+    pickedSwatch.classList.toggle('is-empty', !picked);
     pickedHex.textContent = picked ?? 'Nothing picked yet';
     useButton.disabled = !picked;
   }

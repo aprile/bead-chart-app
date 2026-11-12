@@ -18,7 +18,7 @@ function cardHtml(stitch, beadSize) {
   const across = stitch.calibrationAcross;
   return `
     <form class="panel calibration-card" data-stitch="${stitch.id}" data-size="${beadSize}">
-      <h3>${stitch.label} · ${beadSize} <span class="badge calibration-status"></span></h3>
+      <h3>${stitch.label} · ${beadSize} <span class="v1-badge calibration-status"></span></h3>
 
       <div class="calibration-row">
         <span class="calibration-label">Width</span>

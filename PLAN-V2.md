@@ -196,3 +196,15 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
 - Printable PDF pattern (the PNG with colour key covers sharing for now)
 - Installing as a phone app (PWA) / offline use on the phone. A good candidate for v3, since working mode will be used on a phone.
 - Accounts, hosting, sharing. **Note:** to use the app on a phone *away from the computer*, it will eventually need hosting (e.g. a free static host). For now the phone uses the dev server over home Wi-Fi.
+
+## Progress
+- **Milestone 1 done.** Loom and brick are stitch modules in `src/stitches/`; charts have `version: 2` and a default background (`#faf9f7`), and v1 data is upgraded on load (`src/migrate.js`).
+- **Milestone 2 done.** Square stitch (starts from loom calibration), two-drop brick (pairs counted from the bottom; starts from brick calibration), flat peyote (rightmost column sits low).
+- **Milestone 3 in progress.**
+  - Step 1 done: Tailwind + Basecoat (**Nova** style pack + the chosen shadcn theme in `src/theme.css`) + Lucide installed; dark mode follows the system setting.
+  - Step 2a: Tailwind's preflight is on. The v1 CSS (`style.css`) is in a `v1` layer below Basecoat, and only applies inside `class="v1"` (its colours are `--v1-*`, its badge is `.v1-badge`). Screens drop `v1` as they're rebuilt.
+  - Next: 2b canvas-first layout, 3 chart switcher, 4 stash + photo import as dialogs.
+
+## Open questions
+- **Peyote even/odd count:** is it just whether the column count is even or odd? If so, work it out from `cols` instead of a separate `peyoteCount` setting. Needed by milestone 8 (working mode).
+- **Two-drop brick pick-up order** (milestone 8): assumed the top bead of each stacked pair is picked up first.

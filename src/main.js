@@ -1,4 +1,5 @@
-import './style.css';
+import './app.css';
+import { setupDarkMode } from './dark-mode.js';
 import { setupNewChartPanel } from './new-chart-panel.js';
 import { setupPalette } from './palette.js';
 import { setupPainting } from './painting.js';
@@ -12,6 +13,8 @@ import { countMissingBeads } from './colors.js';
 import { loadSavedChart, listSavedCharts, getCurrentChartId, setCurrentChartId } from './storage.js';
 import { setupAutosave, saveCurrentChart, flushSave } from './autosave.js';
 import * as chart from './chart.js';
+
+setupDarkMode();
 
 const canvas = document.querySelector('#chart-canvas');
 const undoButton = document.querySelector('#undo-button');

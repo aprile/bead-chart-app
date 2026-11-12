@@ -1,30 +1,90 @@
+/* v1 colours. They start with "v1-" so they don't clash with Basecoat's
+   colours (which use names like --muted and --border for other things).
+   They go away as each screen is rebuilt with Basecoat. */
 :root {
-  --text: #2a2730;
-  --muted: #6b6375;
-  --bg: #faf9f7;
-  --panel: #fff;
-  --border: #e2e0e5;
-  --accent: #7a3bd1;
+  --v1-text: #2a2730;
+  --v1-muted: #6b6375;
+  --v1-bg: #faf9f7;
+  --v1-panel: #fff;
+  --v1-border: #e2e0e5;
+  --v1-accent: #7a3bd1;
 
   font: 16px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+  color: var(--v1-text);
+  background: var(--v1-bg);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #ece9f1;
-    --muted: #a19aab;
-    --bg: #16171d;
-    --panel: #1f2028;
-    --border: #2e303a;
-    --accent: #c084fc;
+    --v1-text: #ece9f1;
+    --v1-muted: #a19aab;
+    --v1-bg: #16171d;
+    --v1-panel: #1f2028;
+    --v1-border: #2e303a;
+    --v1-accent: #c084fc;
   }
+}
+
+/* ---- v1 screens ----
+   Everything in this file only applies inside class="v1". Tailwind's
+   preflight removes the browser's default styles; these put back the
+   ones the v1 screens rely on. */
+
+:where(.v1) :is(h3, h4) {
+  font-weight: bold;
+  margin: 1em 0;
+}
+:where(.v1) h1,
+:where(.v1) h2 {
+  font-weight: bold;
+}
+:where(.v1) h3 {
+  font-size: 1.17em;
+}
+:where(.v1) p {
+  margin: 1em 0;
+}
+:where(.v1) :is(ul, ol) {
+  margin: 1em 0;
+  padding-left: 40px;
+}
+:where(.v1) ul {
+  list-style: disc;
+}
+:where(.v1) a {
+  text-decoration: underline;
+}
+:where(.v1) :is(img, canvas, svg) {
+  display: inline;
+  vertical-align: baseline;
+}
+:where(.v1) :is(input:not([type='radio'], [type='checkbox'], [type='range'], [type='color']), select, textarea) {
+  border: 1px solid var(--v1-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  background: var(--v1-panel);
+}
+:where(.v1) input[type='color'] {
+  border: 1px solid var(--v1-border);
+  border-radius: 4px;
+  padding: 2px;
+}
+:where(.v1) select {
+  padding-right: 4px;
+}
+:where(.v1) dialog {
+  margin: auto; /* keeps pop-ups in the middle of the screen */
+}
+:where(.v1) dialog:not([open]) {
+  display: none;
 }
 
 body {
   margin: 0;
+  /* Basecoat gives the body its own colours; keep the v1 ones for now. */
+  background: var(--v1-bg);
+  color: var(--v1-text);
 }
 
 #app {
@@ -67,8 +127,8 @@ body {
   gap: 12px;
   margin-top: 24px;
   padding: 10px 0;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
+  background: var(--v1-bg);
+  border-bottom: 1px solid var(--v1-border);
 }
 
 .palette,
@@ -79,18 +139,18 @@ body {
   gap: 8px;
 }
 
-button {
+:where(.v1) button {
   font: inherit;
   font-size: 0.875rem;
-  color: var(--text);
-  background: var(--panel);
-  border: 1px solid var(--border);
+  color: var(--v1-text);
+  background: var(--v1-panel);
+  border: 1px solid var(--v1-border);
   border-radius: 6px;
   padding: 6px 12px;
   cursor: pointer;
 }
 
-button:disabled {
+:where(.v1) button:disabled {
   opacity: 0.4;
   cursor: default;
 }
@@ -107,33 +167,33 @@ button:disabled {
   padding: 0;
   border-radius: 50%;
   background: var(--swatch);
-  border: 1px solid var(--muted);
+  border: 1px solid var(--v1-muted);
 }
 
 /* The selected colour (or eraser) gets a ring */
 .palette button[aria-pressed='true'] {
-  outline: 3px solid var(--accent);
+  outline: 3px solid var(--v1-accent);
   outline-offset: 2px;
 }
 
-h1 {
+:where(.v1) h1 {
   margin: 0 0 16px;
   font-size: 1.75rem;
 }
 
-h2 {
+:where(.v1) h2 {
   margin: 0 0 12px;
   font-size: 1.25rem;
 }
 
 .panel {
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: var(--v1-panel);
+  border: 1px solid var(--v1-border);
   border-radius: 8px;
   padding: 20px;
 }
 
-fieldset {
+:where(.v1) fieldset {
   border: none;
   margin: 0 0 16px;
   padding: 0;
@@ -142,14 +202,14 @@ fieldset {
   gap: 8px 20px;
 }
 
-legend {
+:where(.v1) legend {
   font-weight: 600;
   margin-bottom: 6px;
   padding: 0;
 }
 
-input[type='radio'] {
-  accent-color: var(--accent);
+:where(.v1) input[type='radio'] {
+  accent-color: var(--v1-accent);
 }
 
 .size-row {
@@ -163,7 +223,7 @@ input[type='radio'] {
   display: flex;
   flex-direction: column;
   font-size: 0.875rem;
-  color: var(--muted);
+  color: var(--v1-muted);
 }
 
 .size-row span {
@@ -173,11 +233,11 @@ input[type='radio'] {
 .size-row input,
 .size-row select {
   font: inherit;
-  color: var(--text);
+  color: var(--v1-text);
   padding: 4px 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--v1-border);
   border-radius: 4px;
-  background: var(--bg);
+  background: var(--v1-bg);
 }
 
 .size-row input {
@@ -186,7 +246,7 @@ input[type='radio'] {
 
 .result {
   display: block;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--v1-border);
   padding-top: 16px;
 }
 
@@ -200,7 +260,7 @@ input[type='radio'] {
 
 .palette .selected-name {
   font-size: 0.875rem;
-  color: var(--muted);
+  color: var(--v1-muted);
 }
 
 .palette-empty {
@@ -208,8 +268,8 @@ input[type='radio'] {
   font-size: 0.875rem;
 }
 
-a {
-  color: var(--accent);
+:where(.v1) a {
+  color: var(--v1-accent);
 }
 
 /* ---- Header + view switch ---- */
@@ -229,26 +289,26 @@ a {
 
 .view-switch {
   display: flex;
-  border: 1px solid var(--border);
+  border: 1px solid var(--v1-border);
   border-radius: 8px;
   overflow: hidden;
 }
 
 .view-switch a {
   padding: 6px 16px;
-  color: var(--text);
+  color: var(--v1-text);
   text-decoration: none;
 }
 
 .view-switch a[aria-current='page'] {
-  background: var(--accent);
-  color: var(--bg);
+  background: var(--v1-accent);
+  color: var(--v1-bg);
 }
 
 /* ---- Stash screen ---- */
 
 .note {
-  color: var(--muted);
+  color: var(--v1-muted);
   font-size: 0.875rem;
   margin: 0 0 8px;
 }
@@ -270,32 +330,32 @@ a {
   display: flex;
   flex-direction: column;
   font-size: 0.875rem;
-  color: var(--muted);
+  color: var(--v1-muted);
 }
 
 .stash-filters label.toggle {
   flex-direction: row;
   align-items: center;
   gap: 6px;
-  color: var(--text);
+  color: var(--v1-text);
   padding-bottom: 6px;
 }
 
 .stash-filters input[type='search'],
 .stash-filters select {
   font: inherit;
-  color: var(--text);
+  color: var(--v1-text);
   padding: 4px 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--v1-border);
   border-radius: 4px;
-  background: var(--panel);
+  background: var(--v1-panel);
 }
 
 .stash-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--v1-border);
 }
 
 .stash-list li {
@@ -304,7 +364,7 @@ a {
   align-items: center;
   gap: 12px;
   padding: 8px 4px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--v1-border);
   /* The browser skips drawing rows that are off screen: keeps 622 rows fast */
   content-visibility: auto;
   contain-intrinsic-size: auto 48px;
@@ -318,7 +378,7 @@ a {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1px solid var(--muted);
+  border: 1px solid var(--v1-muted);
 }
 
 .stash-list .code {
@@ -328,7 +388,7 @@ a {
 
 .stash-list .name small {
   display: block;
-  color: var(--muted);
+  color: var(--v1-muted);
 }
 
 .stash-list .sizes {
@@ -349,13 +409,13 @@ a {
   display: none !important;
 }
 
-button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--bg);
+:where(.v1) button.primary {
+  background: var(--v1-accent);
+  border-color: var(--v1-accent);
+  color: var(--v1-bg);
 }
 
-button.danger {
+:where(.v1) button.danger {
   color: #c62828;
   border-color: currentColor;
 }
@@ -373,7 +433,8 @@ button.danger {
   margin: 0;
 }
 
-.badge {
+/* "v1-": Basecoat has its own .badge */
+.v1-badge {
   display: inline-block;
   font-size: 0.7rem;
   font-weight: 600;
@@ -381,8 +442,8 @@ button.danger {
   letter-spacing: 0.04em;
   padding: 1px 6px;
   border-radius: 999px;
-  border: 1px solid var(--accent);
-  color: var(--accent);
+  border: 1px solid var(--v1-accent);
+  color: var(--v1-accent);
   vertical-align: middle;
 }
 
@@ -392,17 +453,17 @@ button.danger {
 
 /* ---- Pop-up forms ---- */
 
-dialog {
+:where(.v1) dialog {
   width: min(420px, calc(100vw - 32px));
   box-sizing: border-box;
   padding: 20px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--v1-border);
   border-radius: 10px;
-  background: var(--panel);
-  color: var(--text);
+  background: var(--v1-panel);
+  color: var(--v1-text);
 }
 
-dialog::backdrop {
+:where(.v1) dialog::backdrop {
   background: rgb(0 0 0 / 0.4);
 }
 
@@ -417,7 +478,7 @@ dialog::backdrop {
   gap: 4px;
   margin: 0 0 12px;
   font-size: 0.875rem;
-  color: var(--muted);
+  color: var(--v1-muted);
 }
 
 .dialog-form fieldset {
@@ -426,27 +487,27 @@ dialog::backdrop {
 }
 
 .dialog-form fieldset label {
-  color: var(--text);
+  color: var(--v1-text);
 }
 
 .dialog-form input[type='text'],
 .dialog-form textarea,
 .dialog-form select {
   font: inherit;
-  color: var(--text);
+  color: var(--v1-text);
   padding: 6px 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--v1-border);
   border-radius: 4px;
-  background: var(--bg);
+  background: var(--v1-bg);
 }
 
 .dialog-form input[type='color'] {
   width: 64px;
   height: 36px;
   padding: 2px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--v1-border);
   border-radius: 4px;
-  background: var(--bg);
+  background: var(--v1-bg);
 }
 
 .dialog-buttons {
@@ -472,12 +533,12 @@ dialog::backdrop {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  border: 1px solid var(--muted);
+  border: 1px solid var(--v1-muted);
   vertical-align: middle;
   flex-shrink: 0;
 }
 
-.swatch-inline.empty {
+.swatch-inline.is-empty {
   border-style: dashed;
 }
 
@@ -507,22 +568,22 @@ dialog::backdrop {
   flex-direction: column;
   flex: 1 1 240px;
   font-size: 0.875rem;
-  color: var(--muted);
+  color: var(--v1-muted);
 }
 
 .chart-name-label input {
   font: inherit;
   font-size: 1.125rem;
-  color: var(--text);
+  color: var(--v1-text);
   padding: 6px 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--v1-border);
   border-radius: 6px;
-  background: var(--panel);
+  background: var(--v1-panel);
 }
 
 .save-status {
   font-size: 0.875rem;
-  color: var(--muted);
+  color: var(--v1-muted);
   padding-bottom: 8px;
 }
 
@@ -554,7 +615,7 @@ dialog::backdrop {
   list-style: none;
   margin: 0 0 24px;
   padding: 0;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--v1-border);
 }
 
 .charts-list li {
@@ -563,12 +624,12 @@ dialog::backdrop {
   align-items: center;
   gap: 16px;
   padding: 12px 4px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--v1-border);
 }
 
-.charts-list li.empty {
+.charts-list li.is-empty {
   display: block;
-  color: var(--muted);
+  color: var(--v1-muted);
 }
 
 .chart-preview {
@@ -580,7 +641,7 @@ dialog::backdrop {
 
 .chart-preview canvas {
   display: block;
-  box-shadow: 0 0 0 1px var(--border);
+  box-shadow: 0 0 0 1px var(--v1-border);
 }
 
 .chart-info {
@@ -625,7 +686,7 @@ dialog::backdrop {
 
 /* ---- Photo to chart ---- */
 
-dialog.photo-dialog {
+:where(.v1) dialog.photo-dialog {
   width: min(1400px, calc(100vw - 32px));
 }
 
@@ -682,7 +743,7 @@ dialog.photo-dialog {
 
 .photo-preview {
   display: block;
-  box-shadow: 0 0 0 1px var(--border);
+  box-shadow: 0 0 0 1px var(--v1-border);
 }
 
 .photo-summary {
@@ -704,7 +765,7 @@ dialog.photo-dialog {
 }
 
 .photo-controls fieldset {
-  border: 1px solid var(--border);
+  border: 1px solid var(--v1-border);
   border-radius: 8px;
   margin: 0 0 12px;
   padding: 8px 12px 12px;
@@ -729,12 +790,12 @@ dialog.photo-dialog {
 
 .photo-controls .slider output {
   font-variant-numeric: tabular-nums;
-  color: var(--muted);
+  color: var(--v1-muted);
 }
 
 .photo-controls input[type='range'] {
   width: 100%;
-  accent-color: var(--accent);
+  accent-color: var(--v1-accent);
 }
 
 .photo-controls .toggle {
@@ -760,24 +821,24 @@ dialog.photo-dialog {
   align-items: center;
   gap: 4px 8px;
   padding: 6px 0;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--v1-border);
   font-size: 0.875rem;
 }
 
 .chosen-colors .swatch-inline { grid-area: swatch; align-self: start; margin-top: 2px; }
 .chosen-colors .chosen-name { grid-area: name; min-width: 0; }
-.chosen-colors .chosen-name small { color: var(--muted); margin-left: 4px; }
+.chosen-colors .chosen-name small { color: var(--v1-muted); margin-left: 4px; }
 .chosen-colors .lock { grid-area: lock; padding: 2px 8px; }
-.chosen-colors .lock[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.chosen-colors .lock[aria-pressed='true'] { background: var(--v1-accent); border-color: var(--v1-accent); color: var(--v1-bg); }
 
 .chosen-colors select {
   grid-area: swap;
   font: inherit;
   font-size: 0.8rem;
   min-width: 0;
-  color: var(--text);
-  background: var(--bg);
-  border: 1px solid var(--border);
+  color: var(--v1-text);
+  background: var(--v1-bg);
+  border: 1px solid var(--v1-border);
   border-radius: 4px;
 }
 
@@ -826,12 +887,12 @@ dialog.photo-dialog {
   text-align: center;
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
-  color: var(--muted);
+  color: var(--v1-muted);
 }
 
 #zoom-fit[aria-pressed='true'] {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--v1-accent);
+  color: var(--v1-accent);
 }
 
 .view-controls .toggle {
@@ -861,12 +922,12 @@ dialog.photo-dialog {
   flex-direction: column;
   gap: 4px;
   font-size: 0.875rem;
-  color: var(--muted);
+  color: var(--v1-muted);
 }
 
 /* ---- Pick colour from photo ---- */
 
-dialog.pick-color-dialog {
+:where(.v1) dialog.pick-color-dialog {
   width: min(900px, calc(100vw - 32px));
 }
 
@@ -890,9 +951,9 @@ dialog.pick-color-dialog {
 .pick-viewport {
   max-height: 55vh;
   overflow: auto;
-  border: 1px solid var(--border);
+  border: 1px solid var(--v1-border);
   border-radius: 6px;
-  background: var(--bg);
+  background: var(--v1-bg);
 }
 
 .pick-stage {
@@ -955,8 +1016,8 @@ dialog.pick-color-dialog {
 }
 
 .calibration-status:not(.measured) {
-  border-color: var(--muted);
-  color: var(--muted);
+  border-color: var(--v1-muted);
+  color: var(--v1-muted);
 }
 
 .calibration-row {
@@ -976,11 +1037,11 @@ dialog.pick-color-dialog {
 .calibration-row input {
   width: 4.5em;
   font: inherit;
-  color: var(--text);
+  color: var(--v1-text);
   padding: 4px 6px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--v1-border);
   border-radius: 4px;
-  background: var(--bg);
+  background: var(--v1-bg);
 }
 
 .calibration-result {

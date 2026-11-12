@@ -7,7 +7,7 @@
     <title>Bead Chart</title>
   </head>
   <body>
-    <main id="app">
+    <main id="app" class="v1">
       <header class="app-header">
         <h1>Bead Chart</h1>
         <nav class="view-switch" aria-label="Views">
@@ -264,7 +264,7 @@
               </label>
               <div class="background-pick">
                 <button type="button" data-action="pick-background">Pick colour in photo</button>
-                <span class="swatch-inline background-swatch empty"></span>
+                <span class="swatch-inline background-swatch is-empty"></span>
               </div>
               <p class="note picking-note" hidden>Click the background in the photo (Esc to stop).</p>
               <label class="slider">
@@ -305,7 +305,7 @@
         <p class="note">Zoom in, then click on the beads or drag over a small area. The average colour of the area is used.</p>
         <div class="pick-compare">
           <span>Current <span class="swatch-inline pick-swatch pick-current"></span></span>
-          <span>Picked <span class="swatch-inline pick-swatch pick-picked empty"></span> <code class="pick-hex"></code></span>
+          <span>Picked <span class="swatch-inline pick-swatch pick-picked is-empty"></span> <code class="pick-hex"></code></span>
         </div>
         <div class="dialog-buttons">
           <button type="button" data-action="cancel">Cancel</button>

@@ -1,0 +1,23 @@
+/* All the app's CSS, in order. The browser applies CSS "layers" in the
+ * order listed here: a later layer wins over an earlier one.
+ *
+ *   theme       Tailwind's sizes and colours
+ *   base        Tailwind's reset of the browser's default styles ("preflight")
+ *   v1          the v1 screens (style.css), until they're rebuilt with Basecoat
+ *   components  Basecoat components (buttons, dialogs, tabs…)
+ *   utilities   Tailwind classes in the HTML, e.g. "flex" or "gap-2"
+ */
+@layer theme, base, v1, components, utilities;
+
+/* Tailwind (theme + preflight + utilities). */
+@import 'tailwindcss';
+
+/* Basecoat with the Nova style pack. To try another pack, change the
+   name here, e.g. 'basecoat-css/vega'. */
+@import 'basecoat-css/nova';
+
+/* My theme colours, radius and font: these override Basecoat's defaults. */
+@import './theme.css';
+
+/* The v1 screens. */
+@import './style.css' layer(v1);

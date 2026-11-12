@@ -375,7 +375,7 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     }
     renderChosen(counts);
     backgroundSwatch.style.background = background ? rgbToHex(background) : 'transparent';
-    backgroundSwatch.classList.toggle('empty', !background);
+    backgroundSwatch.classList.toggle('is-empty', !background);
 
     summary.textContent =
       `${chart.cols} × ${chart.rows} beads · ${chosen.length} colour${chosen.length === 1 ? '' : 's'}` +

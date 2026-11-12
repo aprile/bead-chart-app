@@ -241,8 +241,8 @@ export function drawChart(canvas, chart, layout, cssWidth, cssHeight) {
 // bottom. They stay at the edges while you scroll.
 function drawNumbers(ctx, layout) {
   const styles = getComputedStyle(document.documentElement);
-  const background = styles.getPropertyValue('--bg').trim() || '#ffffff';
-  const textColor = styles.getPropertyValue('--muted').trim() || '#666666';
+  const background = styles.getPropertyValue('--v1-bg').trim() || '#ffffff';
+  const textColor = styles.getPropertyValue('--v1-muted').trim() || '#666666';
   const { clipX: left, width, height, beadW, beadH, originX, originY, rows } = layout;
   const bottom = chartBottom(layout); // top edge of the column-number strip
   const { firstRow, lastRow, firstCol, lastCol } = visibleRange(layout);
