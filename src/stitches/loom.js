@@ -1,6 +1,8 @@
 // Loom stitch: a straight grid, with the holes running sideways.
 // See index.js for what each part of a stitch module means.
 
+import { rowByRow } from './reading-order.js';
+
 export default {
   id: 'loom',
   label: 'Loom',
@@ -24,10 +26,6 @@ export default {
 
   // Row by row, going up from the bottom. Each row is one pick-up, left to right.
   readingOrder(cols, rows) {
-    const order = [];
-    for (let row = rows - 1; row >= 0; row--) {
-      for (let col = 0; col < cols; col++) order.push({ row, col });
-    }
-    return order;
+    return rowByRow(cols, rows, { alternate: false });
   },
 };

@@ -4,7 +4,8 @@
 import {
   MIN_MM_PER_BEAD, MAX_MM_PER_BEAD, getCalibration, saveCalibration, resetCalibration,
 } from './calibration.js';
-import { STITCHES, specSpacing } from './stitches/index.js';
+import { STITCHES } from './stitches/index.js';
+import { startingSpacing } from './sizing.js';
 import { BEAD_SIZES } from './beads.js';
 
 const BEAD_SIZE_NAMES = Object.keys(BEAD_SIZES);
@@ -36,7 +37,7 @@ function cardHtml(stitch, beadSize) {
       <p class="form-error" hidden></p>
       <div class="calibration-buttons">
         <button type="submit" class="primary">Save</button>
-        <button type="button" data-action="reset">Reset to spec</button>
+        <button type="button" data-action="reset">Reset to ${startingSpacing(stitch.id, beadSize).source}</button>
       </div>
     </form>`;
 }
@@ -65,29 +66,30 @@ export function setupCalibrationScreen(root) {
   // Show what each card is using now, and what the typed numbers work out to.
   function showCard(card) {
     const { stitch, size } = card.dataset;
-    const spec = specSpacing(stitch, size);
+    // the spec, or e.g. my loom values for square stitch (they can change, so read them each time)
+    const start = startingSpacing(stitch, size);
     const saved = getCalibration(stitch, size);
     const fields = card.elements;
 
     const status = card.querySelector('.calibration-status');
-    status.textContent = saved ? 'my measurement' : 'spec';
+    status.textContent = saved ? 'my measurement' : start.source;
     status.classList.toggle('measured', Boolean(saved));
     card.querySelector('[data-action="reset"]').disabled = !saved;
 
-    const describe = (savedMm, specMm, typed, what) => {
+    const describe = (savedMm, startMm, typed, what) => {
       if (typed && !typed.error) {
         const perBead = typed.mm / typed.beads;
         const isSaved = savedMm !== null && Math.abs(savedMm - perBead) < 1e-9;
         return `${mm(perBead)} per ${what}${isSaved ? ' · my measurement' : ' · not saved yet'}`;
       }
       if (savedMm !== null && savedMm !== undefined) return `${mm(savedMm)} per ${what} · my measurement`;
-      return `${mm(specMm)} per ${what} · spec`;
+      return `${mm(startMm)} per ${what} · ${start.source}`;
     };
     card.querySelector('[data-for="columns"]').textContent = describe(
-      saved?.mmPerColumn ?? null, spec.columnWidth, readPair(fields, 'colBeads', 'colMm'), 'column',
+      saved?.mmPerColumn ?? null, start.columnWidth, readPair(fields, 'colBeads', 'colMm'), 'column',
     );
     card.querySelector('[data-for="rows"]').textContent = describe(
-      saved?.mmPerRow ?? null, spec.rowHeight, readPair(fields, 'rowBeads', 'rowMm'), 'row',
+      saved?.mmPerRow ?? null, start.rowHeight, readPair(fields, 'rowBeads', 'rowMm'), 'row',
     );
   }
 

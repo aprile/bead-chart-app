@@ -1,6 +1,8 @@
 // Brick stitch: holes run up and down, and every other row is shifted
 // half a bead to the right. See index.js for what each part means.
 
+import { rowByRow } from './reading-order.js';
+
 export default {
   id: 'brick',
   label: 'Brick stitch',
@@ -25,11 +27,6 @@ export default {
   // Row by row, going up from the bottom, alternating direction:
   // the bottom row left to right, the next right to left, and so on.
   readingOrder(cols, rows) {
-    const order = [];
-    for (let row = rows - 1; row >= 0; row--) {
-      const leftToRight = (rows - 1 - row) % 2 === 0;
-      for (let i = 0; i < cols; i++) order.push({ row, col: leftToRight ? i : cols - 1 - i });
-    }
-    return order;
+    return rowByRow(cols, rows, { alternate: true });
   },
 };

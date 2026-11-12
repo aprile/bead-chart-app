@@ -5,15 +5,25 @@ import { getCalibration } from './calibration.js';
 import { getStitch, specSpacing } from './stitches/index.js';
 
 // How much space one bead takes up in the chart, depending on the stitch.
-// Uses my calibration measurement if I've entered one, otherwise the spec.
-// (Every part of the app gets its bead sizes from here.)
+// Uses my calibration measurement if I've entered one, otherwise the
+// starting values below. (Every part of the app gets its bead sizes from here.)
 export function beadSpacing(stitch, beadSize) {
-  const spec = specSpacing(stitch, beadSize);
+  const start = startingSpacing(stitch, beadSize);
   const calibration = getCalibration(stitch, beadSize);
   return {
-    columnWidth: calibration?.mmPerColumn ?? spec.columnWidth,
-    rowHeight: calibration?.mmPerRow ?? spec.rowHeight,
+    columnWidth: calibration?.mmPerColumn ?? start.columnWidth,
+    rowHeight: calibration?.mmPerRow ?? start.rowHeight,
   };
+}
+
+// What a stitch uses before I've measured it: the spec, or for a stitch
+// that starts from another one (square stitch → loom), that stitch's values,
+// including my calibration of it.
+// `source` says where they come from, for the calibration screen.
+export function startingSpacing(stitch, beadSize) {
+  const from = getStitch(stitch).calibrationFrom;
+  if (from) return { ...beadSpacing(from, beadSize), source: `${getStitch(from).label.toLowerCase()} values` };
+  return { ...specSpacing(stitch, beadSize), source: 'spec' };
 }
 
 // The real finished size of a chart with this many columns and rows.
