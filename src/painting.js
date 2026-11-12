@@ -4,7 +4,8 @@ import { beginStroke, paintBead, endStroke, getChart } from './chart.js';
 import { beadAtPoint, drawBead } from './grid.js';
 
 // getLayout()  → the current layout (bead sizes and scroll position) from chart-view.js
-// getColorId() → the selected colour id, or null for the eraser
+// getColorId() → the colour id to paint, null for the eraser, or undefined
+//                for "nothing to paint with" (the brush with no colour chosen)
 // onStrokeEnd() → called when a drag finishes (to update the undo buttons)
 export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd }) {
   let lastPoint = null; // where the pointer was last time, while dragging
@@ -20,6 +21,7 @@ export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd }) {
     const hit = beadAtPoint(layout, x, y);
     if (!hit) return;
     const colorId = getColorId();
+    if (colorId === undefined) return;
     if (paintBead(hit.row, hit.col, colorId)) {
       drawBead(canvas, layout, hit.row, hit.col, colorId); // only redraw that one bead
     }

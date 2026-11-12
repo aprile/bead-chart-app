@@ -13,6 +13,7 @@ const ZOOM_STEP = 1.25; // each + or − button press
 const MIN_BEAD_PX = 3; // smallest/biggest bead when zooming (shorter side)
 const MAX_BEAD_PX = 160;
 const NUMBERS_SPACE = { left: 36, bottom: 22 }; // room for row numbers (left) and column numbers (bottom)
+const EDGE_SPACE = 16; // space around the chart when it fits in the box
 
 // Saved shape: { zoom: null | "fit" | pixels per mm, gridLines: false, numbers: false }
 // zoom null = the starting size; "fit" = always fit the whole chart.
@@ -28,9 +29,9 @@ function loadView() {
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-// elements = { viewport, spacer, canvas, toolbar, zoomIn, zoomOut, fit, zoomLabel, gridLines, numbers }
+// elements = { viewport, spacer, canvas, zoomIn, zoomOut, fit, zoomLabel, gridLines, numbers }
 export function setupChartView(elements) {
-  const { viewport, spacer, canvas, toolbar } = elements;
+  const { viewport, spacer, canvas } = elements;
   const view = loadView();
   let chart = null;
   let scale = 1; // pixels per mm right now
@@ -45,12 +46,13 @@ export function setupChartView(elements) {
     return view.numbers ? NUMBERS_SPACE : { left: 0, bottom: 0 };
   }
 
-  // Room for the chart: the page width, and the window height below the toolbar.
+  // Room for the chart: the scrolling box, which fills the space between the
+  // panels, minus the numbers and a little space around the edge.
   function available() {
     const m = margins();
     return {
-      width: viewport.parentElement.clientWidth - m.left,
-      height: Math.max(240, window.innerHeight - toolbar.offsetHeight - 24),
+      width: Math.max(50, viewport.offsetWidth - m.left - 2 * EDGE_SPACE),
+      height: Math.max(50, viewport.offsetHeight - 2 * EDGE_SPACE),
     };
   }
 
@@ -71,20 +73,14 @@ export function setupChartView(elements) {
   // Work out sizes, then draw. Call when the chart, window or zoom changes.
   function render(newChart = chart) {
     chart = newChart;
-    if (!chart) return;
+    // Nothing to draw, or the chart screen is hidden (the box has no size).
+    if (!chart || viewport.offsetWidth === 0) return;
     scale = chooseScale();
     const size = chartSizeMm(chart);
     const m = margins();
     content = { width: size.widthMm * scale + m.left, height: size.heightMm * scale + m.bottom };
     spacer.style.width = `${content.width}px`;
     spacer.style.height = `${content.height}px`;
-
-    // The box is as tall as the chart, but no taller than the screen.
-    const wanted = Math.min(content.height, available().height);
-    viewport.style.height = `${wanted}px`;
-    // A sideways scrollbar takes room inside the box: add that room back.
-    viewport.style.height = `${wanted + (viewport.offsetHeight - viewport.clientHeight)}px`;
-
     paint();
     updateControls();
   }
@@ -162,6 +158,10 @@ export function setupChartView(elements) {
   });
 
   viewport.addEventListener('scroll', paint);
+
+  // Redraw when the box changes size: the window is resized, or a side
+  // panel is shown or hidden.
+  new ResizeObserver(() => render()).observe(viewport);
 
   // Cmd + scroll wheel, or a trackpad pinch (Chrome and Firefox send a pinch
   // as a wheel event with Ctrl held down).

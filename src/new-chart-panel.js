@@ -15,16 +15,12 @@ const CHOICES_KEY = STORAGE_KEYS.lastChoices;
 const MAX_BEADS = 1000;
 
 // onChange(settings) runs every time the form changes to valid numbers.
-// onEditEnd() runs when you finish an edit (leave a field, click a radio…).
+// onEditEnd() runs when you finish an edit (leave a field, pick from a list…).
 export function setupNewChartPanel(form, { onChange, onEditEnd }) {
-  // One radio button per stitch module, the first one picked.
-  form.querySelector('#stitch-choices').insertAdjacentHTML(
-    'beforeend',
-    STITCHES.map(
-      (stitch, i) =>
-        `<label><input type="radio" name="stitch" value="${stitch.id}"${i === 0 ? ' checked' : ''} /> ${stitch.label}</label>`,
-    ).join(''),
-  );
+  // One choice per stitch module (the first one is picked to start with).
+  form.querySelector('#stitch').innerHTML = STITCHES.map(
+    (stitch) => `<option value="${stitch.id}">${stitch.label}</option>`,
+  ).join('');
 
   const result = form.querySelector('#size-result');
   const fields = form.elements; // every named input, e.g. fields.width
@@ -112,7 +108,7 @@ export function setupNewChartPanel(form, { onChange, onEditEnd }) {
     `;
   }
 
-  // 'input' fires on every keystroke and every radio/select change.
+  // 'input' fires on every keystroke and every change of a list (select).
   form.addEventListener('input', (event) => {
     const name = event.target.name;
     if (name === 'width') typedLast.across = 'size';

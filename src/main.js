@@ -1,5 +1,11 @@
 import './app.css';
+// Basecoat's scripts for the interactive components (the panel tabs).
+import 'basecoat-css/basecoat';
+import 'basecoat-css/tabs';
 import { setupDarkMode } from './dark-mode.js';
+import { showIcons } from './icons.js';
+import { setupPanels } from './panels.js';
+import { setupTools } from './tools.js';
 import { setupNewChartPanel } from './new-chart-panel.js';
 import { setupPalette } from './palette.js';
 import { setupPainting } from './painting.js';
@@ -14,7 +20,13 @@ import { loadSavedChart, listSavedCharts, getCurrentChartId, setCurrentChartId }
 import { setupAutosave, saveCurrentChart, flushSave } from './autosave.js';
 import * as chart from './chart.js';
 
-setupDarkMode();
+showIcons();
+// The canvas colours (numbers, background) follow dark mode, but need a redraw.
+setupDarkMode(() => redraw());
+setupPanels({
+  left: { panel: document.querySelector('#left-panel'), button: document.querySelector('#toggle-left-panel') },
+  right: { panel: document.querySelector('#right-panel'), button: document.querySelector('#toggle-right-panel') },
+});
 
 const canvas = document.querySelector('#chart-canvas');
 const undoButton = document.querySelector('#undo-button');
@@ -23,13 +35,13 @@ const clearButton = document.querySelector('#clear-button');
 const nameInput = document.querySelector('#chart-name');
 const saveStatus = document.querySelector('#save-status');
 const missingNote = document.querySelector('#missing-note');
+const missingText = document.querySelector('#missing-text');
 
 // Zoom, scrolling, grid lines and numbers.
 const chartView = setupChartView({
   viewport: document.querySelector('#grid-viewport'),
   spacer: document.querySelector('#grid-spacer'),
   canvas,
-  toolbar: document.querySelector('.toolbar'),
   zoomIn: document.querySelector('#zoom-in'),
   zoomOut: document.querySelector('#zoom-out'),
   fit: document.querySelector('#zoom-fit'),
@@ -60,7 +72,7 @@ function updateMissingNote() {
   const count = countMissingBeads(chart.getChart().beads);
   missingNote.hidden = count === 0;
   const what = count === 1 ? '1 bead uses a colour' : `${count} beads use colours`;
-  missingNote.textContent =
+  missingText.textContent =
     `${what} that no longer exist. They're shown white with a red ×: paint over them with another colour.`;
 }
 
@@ -75,11 +87,21 @@ const panel = setupNewChartPanel(document.querySelector('#new-chart-form'), {
   },
 });
 
-const palette = setupPalette(document.querySelector('#palette'));
+// Brush and eraser (left panel). The brush uses the colour chosen in the palette.
+const tools = setupTools(document.querySelector('#left-panel'));
+
+const palette = setupPalette(document.querySelector('#palette'), {
+  onSelect: (colorId) => tools.showColor(colorId),
+  onPick: () => tools.setTool('brush'), // clicking a colour switches back to the brush
+});
 
 setupPainting(canvas, {
   getLayout: () => chartView.getLayout(),
-  getColorId: () => palette.getSelectedColorId(),
+  // null = erase; undefined = nothing to paint with (no colour in the palette)
+  getColorId() {
+    if (tools.getTool() === 'eraser') return null;
+    return palette.getSelectedColorId() ?? undefined;
+  },
   onStrokeEnd() {
     updateButtons();
     updateMissingNote(); // painting over a missing bead fixes it
@@ -177,9 +199,6 @@ window.addEventListener('keydown', (event) => {
   else undo();
 });
 
-// Resizing the window (or moving it to another screen) changes the space available.
-window.addEventListener('resize', redraw);
-
 // ---------- Saving ----------
 
 setupAutosave((state) => {
@@ -240,3 +259,6 @@ views = setupViews((name) => {
   }
   if (name === 'charts') chartsScreen.render();
 });
+// setupViews() showed the first view before `views` was set, so redraw()
+// skipped drawing then. Draw now.
+redraw();

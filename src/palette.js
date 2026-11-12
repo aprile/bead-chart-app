@@ -1,27 +1,30 @@
-// The palette above the chart: my stash colours in the chart's bead size.
+// The palette (right panel): my stash colours in the chart's bead size.
+// Clicking a colour chooses it for the brush.
 
 import { getColor, stashColors, colorLabel } from './colors.js';
 import { escapeHtml } from './html.js';
 
-export function setupPalette(container) {
+// onSelect(colorId) runs when the chosen colour changes, by a click or because
+// the palette changed (colorId is null when there are no colours).
+// onPick() runs only when I click a colour (to switch to the brush).
+export function setupPalette(container, { onSelect, onPick }) {
   container.innerHTML = `
     <div class="swatches"></div>
-    <button type="button" class="eraser" data-color-id="">Eraser</button>
-    <span class="selected-name"></span>
+    <p class="selected-name"></p>
   `;
   const swatches = container.querySelector('.swatches');
   const selectedName = container.querySelector('.selected-name');
 
-  // The chosen colour id. null = the eraser. undefined = nothing chosen yet.
-  let selectedId = undefined;
+  // The chosen colour id, or null if there's none (empty palette).
+  let selectedId = null;
 
   function showSelected() {
-    for (const button of container.querySelectorAll('button')) {
-      const id = button.dataset.colorId || null;
-      button.setAttribute('aria-pressed', id === selectedId);
+    for (const button of swatches.querySelectorAll('button')) {
+      button.setAttribute('aria-pressed', button.dataset.colorId === selectedId);
     }
     const color = selectedId && getColor(selectedId);
-    selectedName.textContent = color ? colorLabel(color) : 'Eraser';
+    selectedName.textContent = color ? colorLabel(color) : '';
+    onSelect(selectedId);
   }
 
   // (Re)build the swatches for a bead size. Called whenever the chart is redrawn,
@@ -45,20 +48,19 @@ export function setupPalette(container) {
         .join('');
     }
 
-    // Keep the chosen colour if it's still here. Otherwise pick the first one
-    // (or the eraser if there are none). If you chose the eraser, it stays.
-    const stillThere = colors.some((color) => color.id === selectedId);
-    if (selectedId === undefined || (selectedId !== null && !stillThere)) {
+    // Keep the chosen colour if it's still here, otherwise pick the first one.
+    if (!colors.some((color) => color.id === selectedId)) {
       selectedId = colors[0]?.id ?? null;
     }
     showSelected();
   }
 
-  container.addEventListener('click', (event) => {
-    const button = event.target.closest('button');
+  swatches.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-color-id]');
     if (!button) return;
-    selectedId = button.dataset.colorId || null;
+    selectedId = button.dataset.colorId;
     showSelected();
+    onPick();
   });
 
   return { show, getSelectedColorId: () => selectedId };

@@ -203,7 +203,8 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
 - **Milestone 3 in progress.**
   - Step 1 done: Tailwind + Basecoat (**Nova** style pack + the chosen shadcn theme in `src/theme.css`) + Lucide installed; dark mode follows the system setting.
   - Step 2a: Tailwind's preflight is on. The v1 CSS (`style.css`) is in a `v1` layer below Basecoat, and only applies inside `class="v1"` (its colours are `--v1-*`, its badge is `.v1-badge`). Screens drop `v1` as they're rebuilt.
-  - Next: 2b canvas-first layout, 3 chart switcher, 4 stash + photo import as dialogs.
+  - Step 2b: canvas-first layout (desktop). Top bar (panel toggles, chart name, New chart, screen links), left Tools panel (brush/eraser, undo/redo/clear, import photo), canvas filling the middle with floating zoom controls, right panel with Palette / Chart tabs. Panels can be hidden (remembered). Other screens still v1, in a scrolling area. Styles in `src/layout.css` (layer `app`).
+  - Next: 3 chart switcher, 4 stash + photo import as dialogs.
 
 ## Open questions
 - **Peyote even/odd count:** is it just whether the column count is even or odd? If so, work it out from `cols` instead of a separate `peyoteCount` setting. Needed by milestone 8 (working mode).

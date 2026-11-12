@@ -8,7 +8,12 @@ function update() {
   document.documentElement.classList.toggle('dark', prefersDark.matches);
 }
 
-export function setupDarkMode() {
+// onChange() runs when the setting changes, e.g. to redraw the canvas
+// (it isn't CSS, so it doesn't change colour by itself).
+export function setupDarkMode(onChange = () => {}) {
   update();
-  prefersDark.addEventListener('change', update);
+  prefersDark.addEventListener('change', () => {
+    update();
+    onChange();
+  });
 }

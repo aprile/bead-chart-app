@@ -11,8 +11,6 @@
 
   font: 16px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light dark;
-  color: var(--v1-text);
-  background: var(--v1-bg);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -80,64 +78,10 @@
   display: none;
 }
 
-body {
-  margin: 0;
-  /* Basecoat gives the body its own colours; keep the v1 ones for now. */
-  background: var(--v1-bg);
+.v1 {
   color: var(--v1-text);
 }
 
-#app {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 24px 16px;
-}
-
-#new-chart-form {
-  max-width: 640px;
-}
-
-.grid-viewport {
-  margin-top: 16px;
-  overflow: auto; /* scrollbars when the chart is bigger than the box */
-}
-
-.grid-spacer {
-  margin: 0 auto; /* centred when the chart is narrower than the page */
-}
-
-#chart-canvas {
-  display: block;
-  /* Stays in view while the box scrolls; we redraw what's visible. */
-  position: sticky;
-  top: 0;
-  left: 0;
-  touch-action: none; /* dragging on a touch screen paints instead of scrolling */
-  cursor: crosshair;
-}
-
-/* Palette + buttons, stays at the top while you scroll a long chart */
-.toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 24px;
-  padding: 10px 0;
-  background: var(--v1-bg);
-  border-bottom: 1px solid var(--v1-border);
-}
-
-.palette,
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
 
 :where(.v1) button {
   font: inherit;
@@ -155,27 +99,7 @@ body {
   cursor: default;
 }
 
-.palette .swatches {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.palette .swatch {
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border-radius: 50%;
-  background: var(--swatch);
-  border: 1px solid var(--v1-muted);
-}
-
 /* The selected colour (or eraser) gets a ring */
-.palette button[aria-pressed='true'] {
-  outline: 3px solid var(--v1-accent);
-  outline-offset: 2px;
-}
-
 :where(.v1) h1 {
   margin: 0 0 16px;
   font-size: 1.75rem;
@@ -212,98 +136,11 @@ body {
   accent-color: var(--v1-accent);
 }
 
-.size-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 12px;
-}
-
-.size-row label {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.875rem;
-  color: var(--v1-muted);
-}
-
-.size-row span {
-  padding-bottom: 6px;
-}
-
-.size-row input,
-.size-row select {
-  font: inherit;
-  color: var(--v1-text);
-  padding: 4px 8px;
-  border: 1px solid var(--v1-border);
-  border-radius: 4px;
-  background: var(--v1-bg);
-}
-
-.size-row input {
-  width: 6em;
-}
-
-.result {
-  display: block;
-  border-top: 1px solid var(--v1-border);
-  padding-top: 16px;
-}
-
-.result p {
-  margin: 0 0 4px;
-}
-
-.bead-count {
-  font-size: 1.25rem;
-}
-
-.palette .selected-name {
-  font-size: 0.875rem;
-  color: var(--v1-muted);
-}
-
-.palette-empty {
-  margin: 0;
-  font-size: 0.875rem;
-}
 
 :where(.v1) a {
   color: var(--v1-accent);
 }
 
-/* ---- Header + view switch ---- */
-
-.app-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.app-header h1 {
-  margin: 0;
-}
-
-.view-switch {
-  display: flex;
-  border: 1px solid var(--v1-border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.view-switch a {
-  padding: 6px 16px;
-  color: var(--v1-text);
-  text-decoration: none;
-}
-
-.view-switch a[aria-current='page'] {
-  background: var(--v1-accent);
-  color: var(--v1-bg);
-}
 
 /* ---- Stash screen ---- */
 
@@ -553,49 +390,7 @@ body {
   min-width: 0;
 }
 
-/* ---- Chart name + save status ---- */
 
-.chart-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.chart-name-label {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 240px;
-  font-size: 0.875rem;
-  color: var(--v1-muted);
-}
-
-.chart-name-label input {
-  font: inherit;
-  font-size: 1.125rem;
-  color: var(--v1-text);
-  padding: 6px 10px;
-  border: 1px solid var(--v1-border);
-  border-radius: 6px;
-  background: var(--v1-panel);
-}
-
-.save-status {
-  font-size: 0.875rem;
-  color: var(--v1-muted);
-  padding-bottom: 8px;
-}
-
-.save-status.error,
-.warning {
-  color: #c62828;
-}
-
-.warning {
-  margin: 12px 0 0;
-  font-size: 0.875rem;
-}
 
 /* ---- My charts ---- */
 
@@ -858,29 +653,7 @@ body {
   cursor: crosshair;
 }
 
-/* ---- View controls (zoom, grid lines, numbers) ---- */
-
-.view-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 16px;
-  width: 100%;
-}
-
-.zoom-controls {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.zoom-controls #zoom-in,
-.zoom-controls #zoom-out {
-  width: 32px;
-  padding: 6px 0;
-  font-size: 1rem;
-  line-height: 1;
-}
+/* ---- Zoom label (pick colour from photo) ---- */
 
 .zoom-label {
   min-width: 3.5em;
@@ -890,23 +663,6 @@ body {
   color: var(--v1-muted);
 }
 
-#zoom-fit[aria-pressed='true'] {
-  border-color: var(--v1-accent);
-  color: var(--v1-accent);
-}
-
-.view-controls .toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.875rem;
-}
-
-/* A toggle that can't be used right now (e.g. grid lines on a brick chart) */
-.view-controls .toggle:has(input:disabled) {
-  opacity: 0.45;
-  cursor: default;
-}
 
 /* ---- Colour box + "Pick from photo" button in the colour forms ---- */
 
