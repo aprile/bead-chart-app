@@ -1,9 +1,12 @@
-// The drawing tools in the left panel: brush and eraser.
-// The brush paints with the colour chosen in the palette.
+// The drawing tools in the left panel:
+// - brush: paints with the colour chosen in the palette
+// - eraser: empties beads
+// - fill: paints all the joined beads of one colour (see fill.js)
+// - picker: click a bead to choose its colour in the palette
 
 import { getColor, colorLabel } from './colors.js';
 
-// root: the left panel. Its tool buttons have data-tool="brush" / "eraser".
+// root: the left panel. Its tool buttons have data-tool="brush", "eraser", "fill" or "picker".
 export function setupTools(root) {
   const buttons = root.querySelectorAll('[data-tool]');
   const swatch = root.querySelector('#current-swatch');
@@ -28,9 +31,16 @@ export function setupTools(root) {
     name.textContent = color ? colorLabel(color) : 'No colour chosen';
   }
 
+  // A short message in place of the colour name, e.g. from the picker.
+  // It stays until the colour changes.
+  function showMessage(text) {
+    name.textContent = text;
+  }
+
   return {
     getTool: () => tool,
     setTool,
     showColor,
+    showMessage,
   };
 }

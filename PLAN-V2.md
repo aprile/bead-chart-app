@@ -204,6 +204,7 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
   - Step 1 done: Tailwind + Basecoat (**Nova** style pack + the chosen shadcn theme in `src/theme.css`) + Lucide installed; dark mode follows the system setting.
   - Step 2a: Tailwind's preflight is on. The v1 CSS (`style.css`) is in a `v1` layer below Basecoat, and only applies inside `class="v1"` (its colours are `--v1-*`, its badge is `.v1-badge`). Screens drop `v1` as they're rebuilt.
   - Step 2b: canvas-first layout (desktop). Top bar (panel toggles, chart name, New chart, screen links), left Tools panel (brush/eraser, undo/redo/clear, import photo), canvas filling the middle with floating zoom controls, right panel with Palette / Chart tabs. Panels can be hidden (remembered). Other screens still v1, in a scrolling area. Styles in `src/layout.css` (layer `app`).
+  - Added (from the layout sketch, agreed 2026-11-12): **fill** and **picker** tools. Fill paints the joined beads of one colour (one undo step); "joined" = cells sharing an edge, worked out from each stitch module's `cellOffset` (`neighbours()` in `src/stitches/index.js`). Picker chooses a bead's colour in the palette (empty bead → eraser).
   - Next: 3 chart switcher, 4 stash + photo import as dialogs.
 
 ## Open questions

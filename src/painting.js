@@ -1,4 +1,5 @@
-// Mouse/touch painting on the canvas: click one bead, or drag across many.
+// Mouse/touch on the canvas. With the brush or eraser: click one bead, or
+// drag across many. With fill or the picker: one click, handled by main.js.
 
 import { beginStroke, paintBead, endStroke, getChart } from './chart.js';
 import { beadAtPoint, drawBead } from './grid.js';
@@ -7,7 +8,9 @@ import { beadAtPoint, drawBead } from './grid.js';
 // getColorId() → the colour id to paint, null for the eraser, or undefined
 //                for "nothing to paint with" (the brush with no colour chosen)
 // onStrokeEnd() → called when a drag finishes (to update the undo buttons)
-export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd }) {
+// getTool()    → 'brush', 'eraser', 'fill' or 'picker'
+// onBeadClick(tool, { row, col }) → a click with fill or the picker
+export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getTool, onBeadClick }) {
   let lastPoint = null; // where the pointer was last time, while dragging
 
   // Pointer position in CSS pixels, relative to the canvas's top left.
@@ -44,6 +47,13 @@ export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd }) {
 
   canvas.addEventListener('pointerdown', (event) => {
     if (event.button !== 0 || !getChart()) return; // left button only
+    const tool = getTool();
+    if (tool === 'fill' || tool === 'picker') {
+      const { x, y } = pointFrom(event);
+      const hit = beadAtPoint(getLayout(), x, y);
+      if (hit) onBeadClick(tool, hit);
+      return;
+    }
     // "Capture" keeps sending us moves even if the pointer leaves the canvas.
     canvas.setPointerCapture(event.pointerId);
     beginStroke();

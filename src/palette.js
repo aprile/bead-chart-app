@@ -63,5 +63,14 @@ export function setupPalette(container, { onSelect, onPick }) {
     onPick();
   });
 
-  return { show, getSelectedColorId: () => selectedId };
+  // Choose a colour from code (the picker tool). Returns false if it isn't
+  // in the palette (not in my stash in this bead size).
+  function select(colorId) {
+    if (!swatches.querySelector(`[data-color-id="${CSS.escape(colorId)}"]`)) return false;
+    selectedId = colorId;
+    showSelected();
+    return true;
+  }
+
+  return { show, select, getSelectedColorId: () => selectedId };
 }

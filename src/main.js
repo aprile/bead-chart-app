@@ -6,6 +6,7 @@ import { setupDarkMode } from './dark-mode.js';
 import { showIcons } from './icons.js';
 import { setupPanels } from './panels.js';
 import { setupTools } from './tools.js';
+import { joinedArea } from './fill.js';
 import { setupNewChartPanel } from './new-chart-panel.js';
 import { setupPalette } from './palette.js';
 import { setupPainting } from './painting.js';
@@ -15,7 +16,7 @@ import { setupViews } from './views.js';
 import { setupPhotoImport } from './photo.js';
 import { setupCalibrationScreen } from './calibration-screen.js';
 import { setupChartView } from './chart-view.js';
-import { countMissingBeads } from './colors.js';
+import { countMissingBeads, getColor, colorLabel } from './colors.js';
 import { loadSavedChart, listSavedCharts, getCurrentChartId, setCurrentChartId } from './storage.js';
 import { setupAutosave, saveCurrentChart, flushSave } from './autosave.js';
 import * as chart from './chart.js';
@@ -102,11 +103,40 @@ setupPainting(canvas, {
     if (tools.getTool() === 'eraser') return null;
     return palette.getSelectedColorId() ?? undefined;
   },
+  getTool: () => tools.getTool(),
+  onBeadClick(tool, { row, col }) {
+    if (tool === 'fill') fillFrom(row, col);
+    else pickFrom(row, col);
+  },
   onStrokeEnd() {
     updateButtons();
     updateMissingNote(); // painting over a missing bead fixes it
   },
 });
+
+// Fill: paint every joined bead of the same colour with the brush colour.
+// It's one undo step, like a brush stroke.
+function fillFrom(row, col) {
+  const colorId = palette.getSelectedColorId();
+  if (!colorId) return; // no colour to fill with
+  chart.beginStroke();
+  for (const bead of joinedArea(chart.getChart(), row, col)) chart.paintBead(bead.row, bead.col, colorId);
+  chart.endStroke();
+  redraw();
+}
+
+// Picker: use a bead's colour, then switch to the brush (or the eraser for an empty bead).
+function pickFrom(row, col) {
+  const colorId = chart.getChart().beads[row][col];
+  if (colorId === null) {
+    tools.setTool('eraser');
+  } else if (palette.select(colorId)) {
+    tools.setTool('brush');
+  } else {
+    const color = getColor(colorId);
+    tools.showMessage(color ? `Not in your stash: ${colorLabel(color)}` : "That colour doesn't exist any more");
+  }
+}
 
 // ---------- Opening, creating and naming charts ----------
 
