@@ -12,8 +12,9 @@
 // - calibrationAcross   words for the calibration screen ("20 … = 41 mm")
 // - calibrationFrom     (optional) another stitch's id: until I calibrate this
 //                       stitch, it uses that stitch's values instead of the spec
-// - cellOffset(row, col)  how far bead (row, col) is shifted from the plain
-//                       grid, in beads: { x, y }. Rows count from the TOP.
+// - cellOffset(row, col, rows)  how far bead (row, col) is shifted from the
+//                       plain grid, in beads: { x, y }. Rows count from the TOP;
+//                       `rows` is the chart's row count, for counting from the bottom.
 // - readingOrder(cols, rows)  every bead in the order it's stitched,
 //                       starting bottom left: [{ row, col }, …]
 //
@@ -23,9 +24,10 @@ import { BEAD_SIZES } from '../beads.js';
 import loom from './loom.js';
 import square from './square.js';
 import brick from './brick.js';
+import brick2 from './brick2.js';
 
 // In the order they're shown in the "Stitch" choice.
-export const STITCHES = [loom, square, brick];
+export const STITCHES = [loom, square, brick, brick2];
 
 export function getStitch(id) {
   return STITCHES.find((stitch) => stitch.id === id) ?? null;

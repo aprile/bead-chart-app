@@ -93,7 +93,7 @@ function fillFor(colorId) {
 // Top-left corner of a bead's cell, measured from the chart's top-left corner.
 // The stitch module says how far the bead is shifted (e.g. brick rows).
 function cellPosition(layout, row, col) {
-  const offset = layout.stitch.cellOffset(row, col);
+  const offset = layout.stitch.cellOffset(row, col, layout.rows);
   return { x: (col + offset.x) * layout.beadW, y: (row + offset.y) * layout.beadH };
 }
 
@@ -351,7 +351,7 @@ export function drawPreview(canvas, chart, maxWidth, maxHeight, fillOf = null) {
   canvas.width = Math.round(cssWidth * ratio);
   canvas.height = Math.round(cssHeight * ratio);
 
-  const layout = { stitch: size.stitch, beadW: size.columnWidth * scale, beadH: size.rowHeight * scale };
+  const layout = { stitch: size.stitch, rows: chart.rows, beadW: size.columnWidth * scale, beadH: size.rowHeight * scale };
   const ctx = canvas.getContext('2d');
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 
