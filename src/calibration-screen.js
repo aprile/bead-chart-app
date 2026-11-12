@@ -29,7 +29,7 @@ function cardHtml(stitch, beadSize) {
 
       <div class="calibration-row">
         <span class="calibration-label">Height</span>
-        <label><input type="number" name="rowBeads" min="1" step="1" inputmode="numeric" /> rows</label>
+        <label><input type="number" name="rowBeads" min="1" step="1" inputmode="numeric" /> ${stitch.calibrationDown ?? 'rows'}</label>
         <label>= <input type="number" name="rowMm" min="0" step="any" inputmode="decimal" /> mm</label>
         <span class="note calibration-result" data-for="rows"></span>
       </div>

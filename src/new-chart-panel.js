@@ -104,11 +104,11 @@ export function setupNewChartPanel(form, { onChange, onEditEnd }) {
   function showResult(settings) {
     const size = realSize(settings);
     const { overhang } = getStitch(settings.stitch);
-    const overhangNote = overhang.across ? ' (incl. half-bead overhang)' : '';
+    const note = ' (incl. half-bead overhang)';
     result.innerHTML = `
       <p class="bead-count"><strong>${settings.cols}</strong> beads across × <strong>${settings.rows}</strong> rows</p>
-      <p>Real finished size: ${formatLength(size.realWidthMm, unit)}${overhangNote}
-        × ${formatLength(size.realHeightMm, unit)}</p>
+      <p>Real finished size: ${formatLength(size.realWidthMm, unit)}${overhang.across ? note : ''}
+        × ${formatLength(size.realHeightMm, unit)}${overhang.down ? note : ''}</p>
     `;
   }
 

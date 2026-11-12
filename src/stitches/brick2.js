@@ -21,7 +21,7 @@ export default {
   // Pairs are counted from the BOTTOM, where work starts (rows 1 + 2 are
   // the first pair). With an odd number of rows, the top pair is a single row.
   // The bottom pair sits straight; every other pair is shifted right half a bead.
-  cellOffset(row, col, rows) {
+  cellOffset(row, col, { rows }) {
     const pair = Math.floor((rows - 1 - row) / 2); // 0 = bottom pair
     return { x: pair % 2 === 1 ? 0.5 : 0, y: 0 };
   },

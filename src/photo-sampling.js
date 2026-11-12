@@ -113,7 +113,7 @@ export function sampleBeadColors(photo, crop, chart) {
   for (let row = 0; row < chart.rows; row++) {
     const beadRow = [];
     for (let col = 0; col < chart.cols; col++) {
-      const offset = stitch.cellOffset(row, col, chart.rows); // same offset as the grid drawing
+      const offset = stitch.cellOffset(row, col, chart); // same offset as the grid drawing
       const left = Math.round((col + offset.x) * K) + inset;
       const top = Math.round((row + offset.y) * K) + inset;
       let n = 0;
