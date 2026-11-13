@@ -14,6 +14,8 @@ import { setupPalette } from './palette.js';
 import { setupBackgroundBead } from './background-bead.js';
 import { setupSelection } from './selection-controls.js';
 import { setupChartMenu } from './chart-menu.js';
+import { downloadChartFile } from './chart-file.js';
+import { setupChartImport } from './chart-import.js';
 import { setupPainting } from './painting.js';
 import { setupStashScreen } from './stash-screen.js';
 import { setupChartsScreen } from './charts-screen.js';
@@ -227,6 +229,17 @@ function focusName() {
 
 const STORAGE_FULL = "Couldn't save: the browser's storage is full. Export a backup, then delete some charts.";
 
+// Import chart…: adds the file as a new chart and opens it.
+const chartImport = setupChartImport({
+  fileInput: document.querySelector('#chart-file-input'),
+  dialog: document.querySelector('#import-colors-dialog'),
+  onImported(saved) {
+    openSavedChart(saved);
+    location.hash = '#chart';
+  },
+  onStashChange: () => redraw(), // the palette shows the stash
+});
+
 setupChartMenu(document.querySelector('#chart-menu'), {
   getOpenChartId: () => chart.getChart().id,
   beforeShow: flushSave,
@@ -271,6 +284,12 @@ setupChartMenu(document.querySelector('#chart-menu'), {
     all() {
       location.hash = '#charts';
     },
+    // Export chart…: download the open chart as a .json file.
+    export() {
+      flushSave();
+      downloadChartFile(chart.getChart());
+    },
+    import: () => chartImport.choose(),
   },
 });
 

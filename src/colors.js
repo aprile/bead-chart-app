@@ -72,6 +72,11 @@ export function estimatedHex(id) {
   return MIYUKI_COLORS.find((color) => color.id === id)?.hex;
 }
 
+// My screen-colour edit for a Miyuki colour, or undefined if I haven't edited it.
+export function getColorOverride(id) {
+  return overrides[id];
+}
+
 export function setColorOverride(id, hex) {
   overrides[id] = hex;
   save(STORAGE_KEYS.overrides, overrides);
@@ -114,6 +119,13 @@ export function addCustomColor(fields) {
   for (const size of color.sizes) stash[size].add(color.id);
   saveStash();
   return color;
+}
+
+// One of my custom colours with this name (ignoring capitals and spaces at
+// the ends) and this screen colour, or undefined. Used when importing a chart.
+export function findCustomColor(name, hex) {
+  const wanted = name.trim().toLowerCase();
+  return custom.colors.find((color) => color.name.trim().toLowerCase() === wanted && color.hex.toLowerCase() === hex.toLowerCase());
 }
 
 export function updateCustomColor(id, fields) {

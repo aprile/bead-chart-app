@@ -868,3 +868,18 @@
     border-radius: 0;
   }
 }
+
+/* The colours listed after importing a chart */
+.import-colors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.import-colors-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

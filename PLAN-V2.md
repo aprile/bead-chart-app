@@ -195,7 +195,7 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
 1. **Stitch modules:** move loom and brick into modules with no visible change, and add `version` + migration. Check v1 charts look identical.
 2. **New stitches:** square, then two-drop brick, then peyote (the trickiest because of the vertical offset and zig-zag rows).
 3. **Tailwind + Basecoat + new layout:** install, pick a theme, the canvas-first shell, side panels, chart switcher, dialogs for stash and photo import.
-4. **Phone/tablet layout:** bottom panel, touch gestures (pinch zoom, pan, paint), bigger touch targets. Test on a real phone with `npm run dev -- --host`.
+4. *(Postponed 2026-11-13, do after milestone 9 or in v3)* **Phone/tablet layout:** bottom panel, touch gestures (pinch zoom, pan, paint), bigger touch targets. Test on a real phone with `npm run dev -- --host`.
 5. ~~Background colour~~ (done early as the background bead, see section 6).
 6. **Single chart export/import** (.json), including the custom colour merge rules and the share sheet.
 7. **PNG export** with the optional colour key.
@@ -224,7 +224,9 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
   - **Milestone 3 done** (desktop).
   - Added 2026-11-13 (asked for before milestone 4): **turn sideways** button in the zoom controls. View only: the chart is drawn a quarter turn clockwise (row 1 on the left, rows running left to right, column 1 at the top); the beads, stitch and export don't change. Remembered per chart (`view.sideways` in the view settings). `grid.js` draws in chart space and turns it with one canvas transform; pointer positions are turned back, so painting, fill, selection and paste work unchanged. Numbers stay upright.
   - Fixed 2026-11-13: **resizing keeps the bottom-left corner** (row 1, column 1) instead of the top left, since work starts there. Rows and columns are added or cut at the top and right. On stitches with offsets, if keeping the corner would change the design's shape (brick with an odd change in rows, peyote with an odd change in columns), the design moves by one row/column to the nearest position that keeps the shape and cuts the fewest painted beads (`resizedPosition` in `chart.js`, using the paste shape check). Also fixed the shape check for pieces hanging off the chart's edge.
-  - Next: milestone 4, phone/tablet layout.
+  - **Milestone 4 (phone/tablet) postponed** (2026-11-13): desktop first. The dialogs already go full screen on a phone. Milestone 5 (background) was done early as the background bead.
+  - **Milestone 6 done** (desktop): Export chart… / Import chart… in the charts menu (`src/chart-file.js`, `src/chart-import.js`). The file holds the chart, the custom colours it uses (incl. the background bead) and my screen-colour edits for the Miyuki colours it uses. Import always adds a new chart ("Name (2)" if taken); custom colours are matched by name + screen colour, otherwise added (and put in the stash); **screen-colour edits: mine win** (decided 2026-11-13), the file's are only used where I have none; Miyuki colours missing from the stash are offered in a dialog. The phone share sheet waits for the phone milestone.
+  - Next: **milestone 7**, PNG export with the optional colour key.
 
 ## Open questions
 - **Peyote even/odd count:** is it just whether the column count is even or odd? If so, work it out from `cols` instead of a separate `peyoteCount` setting. Needed by milestone 8 (working mode).

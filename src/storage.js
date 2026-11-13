@@ -99,7 +99,7 @@ function isValidStash(stash) {
   );
 }
 
-function isValidCustomColors(custom) {
+export function isValidCustomColors(custom) {
   return (
     isObject(custom) &&
     Array.isArray(custom.colors) &&
@@ -133,7 +133,7 @@ export function isValidCalibrationList(list) {
   );
 }
 
-function isValidOverrides(overrides) {
+export function isValidOverrides(overrides) {
   return isObject(overrides) && Object.values(overrides).every((hex) => HEX.test(hex));
 }
 

@@ -37,11 +37,16 @@
                 <div role="menuitem" data-action="duplicate"><i data-lucide="copy"></i> Duplicate</div>
                 <div role="menuitem" data-action="delete" data-variant="destructive"><i data-lucide="trash-2"></i> Delete…</div>
                 <hr role="separator" />
+                <div role="menuitem" data-action="export"><i data-lucide="download"></i> Export chart…</div>
+                <div role="menuitem" data-action="import"><i data-lucide="upload"></i> Import chart…</div>
+                <hr role="separator" />
                 <div role="menuitem" data-action="all"><i data-lucide="folder-open"></i> All charts…</div>
               </div>
             </div>
           </div>
         </div>
+        <!-- The file picker for Import chart… (hidden; the menu item clicks it) -->
+        <input type="file" id="chart-file-input" accept=".json,application/json" hidden />
         <span id="save-status" class="save-status" aria-live="polite">Saved</span>
 
         <nav class="view-switch" aria-label="Screens">
@@ -515,6 +520,23 @@
         </footer>
         <button type="button" aria-label="Close" data-action="close"><i data-lucide="x"></i></button>
       </div>
+    </dialog>
+
+    <!-- After importing a chart: offer to add its colours to my stash (src/chart-import.js) -->
+    <dialog id="import-colors-dialog" class="dialog color-dialog" aria-labelledby="import-colors-title">
+      <form class="form">
+        <header>
+          <h2 id="import-colors-title">Add these colours to your stash?</h2>
+          <p class="import-colors-message"></p>
+        </header>
+        <section>
+          <ul class="import-colors-list"></ul>
+        </section>
+        <footer>
+          <button type="button" class="btn" data-variant="outline" data-action="cancel">Not now</button>
+          <button type="submit" class="btn">Add to stash</button>
+        </footer>
+      </form>
     </dialog>
 
     <!-- Pop-up forms for colours (src/color-dialogs.js). They open over the stash. -->
