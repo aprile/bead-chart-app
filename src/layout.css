@@ -35,9 +35,35 @@
   margin-right: 0.25rem;
 }
 
+/* Chart name + the ▾ charts menu, joined into one control */
+.chart-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
 .top-bar .chart-name {
   width: 16rem;
   min-width: 6rem;
+}
+
+.chart-menu-popover {
+  min-width: 16rem;
+  max-height: min(32rem, calc(100vh - 5rem));
+}
+
+/* A recent chart in the menu: the name, then its stitch and size in grey */
+.chart-menu-charts .chart-menu-detail {
+  margin-inline-start: auto;
+  padding-inline-start: 1rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.chart-menu-charts .chart-menu-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .save-status {

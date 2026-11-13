@@ -218,7 +218,8 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
   - Step 2b: canvas-first layout (desktop). Top bar (panel toggles, chart name, New chart, screen links), left Tools panel (brush/eraser, undo/redo/clear, import photo), canvas filling the middle with floating zoom controls, right panel with Palette / Chart tabs. Panels can be hidden (remembered). Other screens still v1, in a scrolling area. Styles in `src/layout.css` (layer `app`).
   - Added (from the layout sketch, agreed 2026-11-12): **fill** and **picker** tools. Fill paints the joined beads of one colour (one undo step); "joined" = cells sharing an edge, worked out from each stitch module's `cellOffset` (`neighbours()` in `src/stitches/index.js`). Picker chooses a bead's colour in the palette (empty bead → eraser).
   - Added 2026-11-13 (asked for before polish): grid lines show only every 10th line ("Lines every 10 beads"); **background bead** per chart (section 6, pulled forward from milestone 5); **marquee selection** done (Select tool; copy, paste, fill, erase, deselect; outline follows the beads; `src/selection.js`, `src/selection-controls.js`). Paste floats with a Cancel/Done bar; ⌘Z while pasting cancels the paste; the copy stays when you open another chart. Snapping is worked out from each stitch's `cellOffset` (no separate setting in the modules).
-  - Then: 3 chart switcher, 4 stash + photo import as dialogs.
+  - Step 3 done: **chart switcher**. The name box stays (type to rename); a ▾ menu next to it (Basecoat dropdown) lists the 8 most recent charts (✓ on the open one) plus New chart, Rename, Duplicate, Delete…, All charts… (`src/chart-menu.js`). The separate New chart button is gone.
+  - Next: 4 stash + photo import as dialogs.
 
 ## Open questions
 - **Peyote even/odd count:** is it just whether the column count is even or odd? If so, work it out from `cols` instead of a separate `peyoteCount` setting. Needed by milestone 8 (working mode).

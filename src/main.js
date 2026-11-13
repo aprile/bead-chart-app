@@ -2,6 +2,7 @@ import './app.css';
 // Basecoat's scripts for the interactive components (the panel tabs).
 import 'basecoat-css/basecoat';
 import 'basecoat-css/tabs';
+import 'basecoat-css/dropdown-menu';
 import { setupDarkMode } from './dark-mode.js';
 import { showIcons } from './icons.js';
 import { setupPanels } from './panels.js';
@@ -11,6 +12,7 @@ import { setupNewChartPanel } from './new-chart-panel.js';
 import { setupPalette } from './palette.js';
 import { setupBackgroundBead } from './background-bead.js';
 import { setupSelection } from './selection-controls.js';
+import { setupChartMenu } from './chart-menu.js';
 import { setupPainting } from './painting.js';
 import { setupStashScreen } from './stash-screen.js';
 import { setupChartsScreen } from './charts-screen.js';
@@ -19,8 +21,8 @@ import { setupPhotoImport } from './photo.js';
 import { setupCalibrationScreen } from './calibration-screen.js';
 import { setupChartView } from './chart-view.js';
 import { countMissingBeads, getColor, colorLabel } from './colors.js';
-import { loadSavedChart, listSavedCharts, getCurrentChartId, setCurrentChartId } from './storage.js';
-import { setupAutosave, saveCurrentChart, flushSave } from './autosave.js';
+import { loadSavedChart, listSavedCharts, getCurrentChartId, setCurrentChartId, saveChart, deleteSavedChart } from './storage.js';
+import { setupAutosave, saveCurrentChart, flushSave, cancelPendingSave } from './autosave.js';
 import * as chart from './chart.js';
 
 showIcons();
@@ -198,10 +200,76 @@ function startNewChart() {
   showOpenChart();
 }
 
-document.querySelector('#new-chart-button').addEventListener('click', () => {
-  startNewChart();
-  nameInput.focus();
-  nameInput.select(); // ready to type a name
+// After the open chart is deleted: open the most recently changed chart
+// that's left, or start a new one.
+function openNextChart() {
+  const next = listSavedCharts()[0];
+  if (next) {
+    chart.openChart(next);
+    setCurrentChartId(next.id);
+    showOpenChart();
+  } else {
+    startNewChart();
+  }
+}
+
+function focusName() {
+  // Wait a moment: closing the menu puts the focus back on its button first.
+  setTimeout(() => {
+    nameInput.focus();
+    nameInput.select(); // ready to type a name
+  });
+}
+
+// ---------- The charts menu (▾ next to the name) ----------
+
+const STORAGE_FULL = "Couldn't save: the browser's storage is full. Export a backup, then delete some charts.";
+
+setupChartMenu(document.querySelector('#chart-menu'), {
+  getOpenChartId: () => chart.getChart().id,
+  beforeShow: flushSave,
+  actions: {
+    open(saved) {
+      openSavedChart(saved);
+      location.hash = '#chart';
+    },
+    new() {
+      startNewChart();
+      location.hash = '#chart';
+      focusName();
+    },
+    rename: focusName,
+    duplicate() {
+      flushSave();
+      const current = chart.getChart();
+      const now = Date.now();
+      const copy = {
+        ...structuredClone(current), // a full copy, beads and all
+        id: crypto.randomUUID(),
+        name: `${current.name} (copy)`,
+        createdAt: now,
+        updatedAt: now,
+      };
+      if (!saveChart(copy)) {
+        alert(STORAGE_FULL);
+        return;
+      }
+      openSavedChart(copy);
+      location.hash = '#chart';
+      focusName();
+    },
+    delete() {
+      const current = chart.getChart();
+      if (!confirm(`Delete “${current.name}”? This can't be undone.`)) return;
+      cancelPendingSave(); // otherwise a waiting autosave would bring it back
+      deleteSavedChart(current.id);
+      openNextChart();
+      location.hash = '#chart';
+    },
+    all() {
+      location.hash = '#charts';
+    },
+  },
 });
 
 nameInput.addEventListener('input', () => chart.renameChart(nameInput.value));
@@ -290,17 +358,7 @@ const chartsScreen = setupChartsScreen(document.querySelector('#charts-view'), {
     nameInput.value = name;
     saveCurrentChart();
   },
-  afterDeleteOpenChart() {
-    // Open the most recently changed chart that's left, or start a new one.
-    const next = listSavedCharts()[0];
-    if (next) {
-      chart.openChart(next);
-      setCurrentChartId(next.id);
-      showOpenChart();
-    } else {
-      startNewChart();
-    }
-  },
+  afterDeleteOpenChart: openNextChart,
   newChart: startNewChart,
 });
 
