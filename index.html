@@ -38,6 +38,7 @@
                 <div role="menuitem" data-action="delete" data-variant="destructive"><i data-lucide="trash-2"></i> Delete…</div>
                 <hr role="separator" />
                 <div role="menuitem" data-action="export"><i data-lucide="download"></i> Export chart…</div>
+                <div role="menuitem" data-action="picture"><i data-lucide="image-down"></i> Export picture…</div>
                 <div role="menuitem" data-action="import"><i data-lucide="upload"></i> Import chart…</div>
                 <hr role="separator" />
                 <div role="menuitem" data-action="all"><i data-lucide="folder-open"></i> All charts…</div>
@@ -356,7 +357,7 @@
             <p class="photo-summary"></p>
             <label class="label photo-switch">
               <input type="checkbox" role="switch" class="input" name="showSampled" form="photo-controls" />
-              Show sampled colours (before matching to my stash)
+              Show sampled colours (before matching to bead colours)
             </label>
           </div>
 
@@ -364,11 +365,15 @@
           <form id="photo-controls" class="photo-controls">
             <fieldset class="photo-group">
               <legend>Colours</legend>
+              <label class="label photo-switch" title="Turn off to use any Miyuki colour in this bead size">
+                <input type="checkbox" role="switch" class="input" name="onlyStash" checked />
+                Only colours in my stash
+              </label>
               <div class="field">
                 <label class="slider-label">Max colours <output name="capValue">6</output></label>
                 <input type="range" class="input" name="cap" min="2" max="20" value="6" />
               </div>
-              <p class="photo-hint">Lock a colour to keep it, or swap it for another stash colour.</p>
+              <p class="photo-hint">Lock a colour to keep it, or swap it for another colour.</p>
               <ul class="chosen-colors"></ul>
             </fieldset>
 
@@ -519,6 +524,39 @@
           <button type="button" class="btn" data-action="close">Done</button>
         </footer>
         <button type="button" aria-label="Close" data-action="close"><i data-lucide="x"></i></button>
+      </div>
+    </dialog>
+
+    <!-- Export picture… (src/picture-dialog.js) -->
+    <dialog id="picture-dialog" class="dialog picture-dialog" aria-labelledby="picture-title">
+      <div>
+        <header>
+          <h2 id="picture-title">Export picture</h2>
+          <p>A PNG picture of the whole chart, to print or share.</p>
+        </header>
+
+        <section class="picture-body">
+          <!-- the preview (a canvas) is put here -->
+          <div class="picture-preview"></div>
+
+          <form class="picture-options">
+            <div class="field">
+              <label class="slider-label" for="picture-bead-px">Bead size <output name="beadPxValue">24 px</output></label>
+              <input type="range" class="input" id="picture-bead-px" name="beadPx" min="6" max="64" step="1" value="24" />
+            </div>
+            <label class="label"><input type="checkbox" role="switch" class="input" name="gridLines" /> Lines every 10 beads</label>
+            <label class="label"><input type="checkbox" role="switch" class="input" name="key" /> Colour key with bead counts</label>
+            <label class="label"><input type="checkbox" role="switch" class="input" name="transparent" /> Transparent background (empty beads left out)</label>
+            <label class="label"><input type="checkbox" role="switch" class="input" name="sideways" /> Turned sideways (row 1 on the left)</label>
+            <p class="picture-size"></p>
+          </form>
+        </section>
+
+        <footer>
+          <button type="button" class="btn" data-variant="outline" data-action="cancel">Cancel</button>
+          <button type="button" class="btn" data-action="download"><i data-lucide="download"></i> Download PNG</button>
+        </footer>
+        <button type="button" aria-label="Close" data-action="cancel"><i data-lucide="x"></i></button>
       </div>
     </dialog>
 

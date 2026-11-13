@@ -7,13 +7,13 @@
 
 import {
   createIcons,
-  Check, ChevronDown, ClipboardPaste, Copy, Download, Eraser, FilePlus, FolderOpen, ImagePlus, Minus,
+  Check, ChevronDown, ClipboardPaste, Copy, Download, Eraser, FilePlus, FolderOpen, ImageDown, ImagePlus, Minus,
   PaintBucket, Paintbrush, Palette, PanelLeft, PanelRight, Pencil, Pipette, Plus, Redo2, RotateCwSquare, Scan,
   Settings, SquareDashed, Trash2, TriangleAlert, Undo2, Upload, X,
 } from 'lucide';
 
 const icons = {
-  Check, ChevronDown, ClipboardPaste, Copy, Download, Eraser, FilePlus, FolderOpen, ImagePlus, Minus,
+  Check, ChevronDown, ClipboardPaste, Copy, Download, Eraser, FilePlus, FolderOpen, ImageDown, ImagePlus, Minus,
   PaintBucket, Paintbrush, Palette, PanelLeft, PanelRight, Pencil, Pipette, Plus, Redo2, RotateCwSquare, Scan,
   Settings, SquareDashed, Trash2, TriangleAlert, Undo2, Upload, X,
 };

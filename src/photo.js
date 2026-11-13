@@ -4,12 +4,15 @@
 // The work is split in two so sliders stay quick:
 // 1. When the crop box moves: find each bead's most common colour (slower).
 // 2. On any setting change: adjust those colours, remove the background,
-//    choose the N best stash colours, match every bead (fast).
+//    choose the N best colours, match every bead (fast).
+//
+// The colours come from my stash, or (with "Only colours in my stash" off)
+// from every colour made in the chart's bead size.
 
 import { preparePhoto, sampleBeadColors, chartShape, adjustColor, pickColorAt } from './photo-sampling.js';
 import { createColorMatcher, chooseColors } from './color-match.js';
 import { rgbToLab, rgbToHex } from './color-math.js';
-import { stashColors, getColor, colorLabel } from './colors.js';
+import { stashColors, allColors, sortByFamily, getColor, colorLabel } from './colors.js';
 import { drawPreview } from './grid.js';
 import { formatLength } from './sizing.js';
 import { escapeHtml } from './html.js';
@@ -34,6 +37,7 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   let photo = null; // the shrunk photo (a canvas), shown in the stage
   let chart = null; // the open chart, when the dialog was opened
   let stash = []; // stash colours for the chart's bead size
+  let everyColor = []; // every colour (Miyuki and mine) made in the chart's bead size
   let aspect = 1; // crop box width ÷ height (the chart's real shape)
   let box = null; // crop box { x, y, w, h } in photo pixels
 
@@ -51,10 +55,14 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   button.addEventListener('click', () => {
     chart = getChart();
     stash = stashColors(chart.beadSize);
-    if (stash.length === 0) {
-      alert(`Your stash has no ${chart.beadSize} colours yet. Add some on the My stash screen first.`);
-      return;
-    }
+    everyColor = sortByFamily(allColors().filter((color) => color.sizes.includes(chart.beadSize)));
+    // With no stash colours in this size, the photo can only use "every colour".
+    const noStash = stash.length === 0;
+    if (noStash) fields.onlyStash.checked = false;
+    fields.onlyStash.disabled = noStash;
+    fields.onlyStash.parentElement.title = noStash
+      ? `Your stash has no ${chart.beadSize} colours yet`
+      : 'Turn off to use any Miyuki colour in this bead size';
     fileInput.click();
   });
 
@@ -224,6 +232,11 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
 
   // ---------- Settings ----------
 
+  // The colours the photo may use right now.
+  function availableColors() {
+    return fields.onlyStash.checked ? stash : everyColor;
+  }
+
   function readSettings() {
     return {
       cap: Number(fields.cap.value),
@@ -239,6 +252,11 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   // Any slider or checkbox: show its number and update the preview.
   controls.addEventListener('input', (event) => {
     if (event.target.closest('.chosen-colors')) return; // swap menus are handled below
+    if (event.target === fields.onlyStash && fields.onlyStash.checked) {
+      // Back to my stash only: forget colours I locked or swapped in from outside it.
+      const inStash = new Set(stash.map((color) => color.id));
+      locked = locked.filter((id) => inStash.has(id));
+    }
     for (const name of ['cap', 'brightness', 'contrast', 'saturation', 'tolerance']) {
       fields[`${name}Value`].value = fields[name].value;
     }
@@ -264,13 +282,22 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   let shownChosenKey = ''; // what the list shows now, so we only rebuild it when it changes
 
   function renderChosen(counts) {
-    const key = chosen.map((c) => c.id).join() + '|' + locked.join();
+    const key = chosen.map((c) => c.id).join() + '|' + locked.join() + '|' + fields.onlyStash.checked;
     if (key !== shownChosenKey) {
       shownChosenKey = key;
-      // One shared list of options for every "swap" menu.
-      const options = stash
-        .map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(colorLabel(c))}</option>`)
-        .join('');
+      // One shared list of options for every "swap" menu. With every colour
+      // allowed, my stash comes first, then the rest.
+      const optionsFor = (colors) =>
+        colors.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(colorLabel(c))}</option>`).join('');
+      let options;
+      if (fields.onlyStash.checked) {
+        options = optionsFor(stash);
+      } else {
+        const inStash = new Set(stash.map((color) => color.id));
+        options =
+          (stash.length > 0 ? `<optgroup label="My stash">${optionsFor(stash)}</optgroup>` : '') +
+          `<optgroup label="Other colours">${optionsFor(everyColor.filter((c) => !inStash.has(c.id)))}</optgroup>`;
+      }
       chosenList.innerHTML = chosen
         .map((color) => {
           const isLocked = locked.includes(color.id);
@@ -356,7 +383,7 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     // before brightness/contrast/saturation.
     const adjusted = sampled.map((row) => row.map((rgb) => (isBackground(rgb) ? null : adjustColor(rgb, settings))));
 
-    const candidates = stash.filter((c) => !excluded.has(c.id));
+    const candidates = availableColors().filter((c) => !excluded.has(c.id));
     const lockedColors = locked.map(getColor).filter(Boolean);
     chosen = chooseColors(adjusted.flat().filter(Boolean), candidates, settings.cap, lockedColors);
     const nearest = chosen.length > 0 ? createColorMatcher(chosen) : null;

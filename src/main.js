@@ -16,6 +16,8 @@ import { setupSelection } from './selection-controls.js';
 import { setupChartMenu } from './chart-menu.js';
 import { downloadChartFile } from './chart-file.js';
 import { setupChartImport } from './chart-import.js';
+import { setupStashOffer, colorsNotInStash } from './stash-offer.js';
+import { setupPictureDialog } from './picture-dialog.js';
 import { setupPainting } from './painting.js';
 import { setupStashScreen } from './stash-screen.js';
 import { setupChartsScreen } from './charts-screen.js';
@@ -101,6 +103,11 @@ const panel = setupNewChartPanel(document.querySelector('#new-chart-form'), {
 // Brush and eraser (left panel). The brush uses the colour chosen in the palette.
 const tools = setupTools(document.querySelector('#left-panel'));
 
+// "Add these colours to your stash?" (after importing a chart or a photo).
+const stashOffer = setupStashOffer(document.querySelector('#import-colors-dialog'), {
+  onStashChange: () => redraw(), // the palette shows the stash
+});
+
 // Background bead (Chart tab). Changing it is one undo step.
 const backgroundBead = setupBackgroundBead(document.querySelector('#right-panel'), {
   getBrushColorId: () => palette.getSelectedColorId(),
@@ -120,6 +127,7 @@ const palette = setupPalette(document.querySelector('#palette'), {
   onPick() {
     if (['eraser', 'picker'].includes(tools.getTool())) tools.setTool('brush');
   },
+  onStashChange: () => redraw(), // "Add to my stash" under the chosen colour
 });
 
 // Select tool + the Selection buttons (copy, fill, erase, deselect).
@@ -164,6 +172,7 @@ function fillFrom(row, col) {
 }
 
 // Picker: use a bead's colour, then switch to the brush (or the eraser for an empty bead).
+// A colour that isn't in my stash switches the palette to "All colours".
 function pickFrom(row, col) {
   const colorId = chart.getChart().beads[row][col];
   if (colorId === null) {
@@ -172,7 +181,8 @@ function pickFrom(row, col) {
     tools.setTool('brush');
   } else {
     const color = getColor(colorId);
-    tools.showMessage(color ? `Not in your stash: ${colorLabel(color)}` : "That colour doesn't exist any more");
+    const size = chart.getChart().beadSize;
+    tools.showMessage(color ? `${colorLabel(color)} isn't made in ${size}` : "That colour doesn't exist any more");
   }
 }
 
@@ -229,10 +239,16 @@ function focusName() {
 
 const STORAGE_FULL = "Couldn't save: the browser's storage is full. Export a backup, then delete some charts.";
 
+// Export picture…: a PNG of the whole chart.
+const pictureDialog = setupPictureDialog(document.querySelector('#picture-dialog'), {
+  getChart: () => chart.getChart(),
+  isSideways: () => chartView.isSideways(),
+});
+
 // Import chart…: adds the file as a new chart and opens it.
 const chartImport = setupChartImport({
   fileInput: document.querySelector('#chart-file-input'),
-  dialog: document.querySelector('#import-colors-dialog'),
+  stashOffer,
   onImported(saved) {
     openSavedChart(saved);
     location.hash = '#chart';
@@ -290,6 +306,10 @@ setupChartMenu(document.querySelector('#chart-menu'), {
       downloadChartFile(chart.getChart());
     },
     import: () => chartImport.choose(),
+    picture() {
+      location.hash = '#chart'; // so the sideways setting is for this chart
+      pictureDialog.open();
+    },
   },
 });
 
@@ -341,6 +361,15 @@ setupPhotoImport({
     selection.cancelPaste();
     chart.setAllBeads(beads);
     redraw();
+    // The photo may have used colours that aren't in my stash: offer to add them.
+    const { beadSize } = chart.getChart();
+    const missing = colorsNotInStash(beads.flat(), beadSize);
+    const count = missing.length;
+    stashOffer.offer({
+      colors: missing,
+      size: beadSize,
+      message: `The photo used ${count} ${beadSize} colour${count === 1 ? '' : 's'} that ${count === 1 ? "isn't" : "aren't"} in your stash. Add ${count === 1 ? 'it' : 'them'}, so ${count === 1 ? 'it shows' : 'they show'} in your palette?`,
+    });
   },
 });
 

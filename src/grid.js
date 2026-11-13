@@ -177,7 +177,7 @@ function drawGridLines(ctx, layout, { firstRow, lastRow, firstCol, lastCol }) {
     lines.moveTo(left, y);
     lines.lineTo(right, y);
   }
-  ctx.strokeStyle = isDark(layout.emptyFill) ? GRID_LINE_10TH_ON_DARK : GRID_LINE_10TH;
+  ctx.strokeStyle = layout.emptyFill && isDark(layout.emptyFill) ? GRID_LINE_10TH_ON_DARK : GRID_LINE_10TH;
   // A bit wider than the gap between beads, so the line shows on the beads' edges too.
   ctx.lineWidth = Math.max(1.5, layout.gap + 1.5);
   ctx.stroke(lines);
@@ -300,10 +300,11 @@ export function topLeftBead(layout) {
 // ---------- Drawing the chart ----------
 
 // Draws the visible part of the chart on a canvas of cssWidth × cssHeight.
-export function drawChart(canvas, chart, layout, cssWidth, cssHeight) {
+// ratio: real pixels per CSS pixel. On screen that's the screen's sharpness;
+// the PNG export uses 1 so the picture has exactly the size asked for.
+export function drawChart(canvas, chart, layout, cssWidth, cssHeight, { ratio = window.devicePixelRatio || 1 } = {}) {
   // The canvas is never bigger than the screen, so it can always use the
   // screen's full sharpness (2–3 real pixels per CSS pixel on retina).
-  const ratio = window.devicePixelRatio || 1;
   const pixelWidth = Math.round(cssWidth * ratio);
   const pixelHeight = Math.round(cssHeight * ratio);
   // Changing the size wipes and rebuilds the canvas, so only do it when needed.
@@ -333,6 +334,7 @@ export function drawChart(canvas, chart, layout, cssWidth, cssHeight) {
   for (let row = firstRow; row <= lastRow; row++) {
     for (let col = firstCol; col <= lastCol; col++) {
       const colorId = chart.beads[row][col];
+      if (colorId === null && layout.emptyFill === null) continue; // empty beads left out (PNG export)
       const fill = fillFor(colorId, layout.emptyFill);
       if (!shapes.has(fill)) shapes.set(fill, new Path2D());
       addBeadShape(shapes.get(fill), layout, row, col);

@@ -17,6 +17,8 @@ export const STORAGE_KEYS = {
   lastChoices: `${PREFIX}lastChoices`,
   view: `${PREFIX}view`, // zoom, grid lines, numbers
   panels: `${PREFIX}panels`, // which side panels are showing
+  pictureExport: `${PREFIX}pictureExport`, // the PNG export options last used
+  palette: `${PREFIX}palette`, // palette showing "My stash" or "All colours"
   currentChartId: `${PREFIX}currentChart`,
 };
 
@@ -286,7 +288,7 @@ export function checkBackup(data) {
 }
 
 // Screen preferences, not data: importing a backup keeps them.
-const KEPT_ON_IMPORT = [STORAGE_KEYS.lastChoices, STORAGE_KEYS.view, STORAGE_KEYS.panels];
+const KEPT_ON_IMPORT = [STORAGE_KEYS.lastChoices, STORAGE_KEYS.view, STORAGE_KEYS.panels, STORAGE_KEYS.pictureExport, STORAGE_KEYS.palette];
 
 // Replace all my data with a (checked) backup. Returns true if it worked.
 // If it fails halfway (e.g. storage full), the old data is put back.

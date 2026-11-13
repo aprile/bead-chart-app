@@ -230,6 +230,7 @@ export function setupChartView(elements) {
       overlay = fn;
     },
     getLayout: () => layout,
+    isSideways, // is the open chart shown turned sideways?
     scrollToStart() {
       viewport.scrollTo(0, 0);
     },
