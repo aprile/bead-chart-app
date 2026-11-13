@@ -1,5 +1,6 @@
-// How the chart is viewed: zoom, scrolling, grid lines and row/column numbers.
-// The settings are remembered between visits.
+// How the chart is viewed: zoom, scrolling, grid lines, row/column numbers,
+// and turning the chart sideways. The settings are remembered between visits
+// (turned sideways is remembered for each chart).
 //
 // How scrolling works: a big empty "spacer" the size of the whole chart sits
 // inside a scrolling box, so you get normal scrollbars. The canvas sticks to
@@ -15,21 +16,25 @@ const MAX_BEAD_PX = 160;
 const NUMBERS_SPACE = { left: 36, bottom: 22 }; // room for row numbers (left) and column numbers (bottom)
 const EDGE_SPACE = 16; // space around the chart when it fits in the box
 
-// Saved shape: { zoom: null | "fit" | pixels per mm, gridLines: false, numbers: false }
+// Saved shape: { zoom: null | "fit" | pixels per mm, gridLines: false, numbers: false,
+//                sideways: { chartId: true, ... } }
 // zoom null = the starting size; "fit" = always fit the whole chart.
+// sideways: the charts shown turned sideways (row 1 on the left).
 function loadView() {
   const saved = load(STORAGE_KEYS.view);
   const zoom = saved?.zoom;
+  const sideways = saved?.sideways;
   return {
     zoom: zoom === 'fit' || (typeof zoom === 'number' && zoom > 0) ? zoom : null,
     gridLines: saved?.gridLines ?? false,
     numbers: saved?.numbers ?? false,
+    sideways: sideways && typeof sideways === 'object' && !Array.isArray(sideways) ? sideways : {},
   };
 }
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-// elements = { viewport, spacer, canvas, zoomIn, zoomOut, fit, zoomLabel, gridLines, numbers }
+// elements = { viewport, spacer, canvas, zoomIn, zoomOut, fit, zoomLabel, sideways, gridLines, numbers }
 export function setupChartView(elements) {
   const { viewport, spacer, canvas } = elements;
   const view = loadView();
@@ -41,6 +46,11 @@ export function setupChartView(elements) {
 
   function saveView() {
     save(STORAGE_KEYS.view, view);
+  }
+
+  // Is the open chart turned sideways?
+  function isSideways() {
+    return Boolean(chart && view.sideways[chart.id]);
   }
 
   function margins() {
@@ -63,12 +73,19 @@ export function setupChartView(elements) {
     return clamp(value, MIN_BEAD_PX / smallerMm, MAX_BEAD_PX / smallerMm);
   }
 
-  function chooseScale() {
+  // The room for the chart, measured along the chart's own width and height.
+  // Turned sideways, the chart's width runs down the screen, so they swap.
+  function roomForChart() {
     const { width, height } = available();
     const space = height - margins().bottom;
-    if (view.zoom === 'fit') return fitScale(chart, width, space);
+    return isSideways() ? { across: space, down: width } : { across: width, down: space };
+  }
+
+  function chooseScale() {
+    const room = roomForChart();
+    if (view.zoom === 'fit') return fitScale(chart, room.across, room.down);
     if (typeof view.zoom === 'number') return clampScale(view.zoom);
-    return autoScale(chart, width, space);
+    return autoScale(chart, room.across, room.down);
   }
 
   // Work out sizes, then draw. Call when the chart, window or zoom changes.
@@ -79,7 +96,11 @@ export function setupChartView(elements) {
     scale = chooseScale();
     const size = chartSizeMm(chart);
     const m = margins();
-    content = { width: size.widthMm * scale + m.left, height: size.heightMm * scale + m.bottom };
+    // The chart's size on screen (turned sideways, width and height swap).
+    const shown = isSideways()
+      ? { width: size.heightMm * scale, height: size.widthMm * scale }
+      : { width: size.widthMm * scale, height: size.heightMm * scale };
+    content = { width: shown.width + m.left, height: shown.height + m.bottom };
     spacer.style.width = `${content.width}px`;
     spacer.style.height = `${content.height}px`;
     paint();
@@ -91,8 +112,9 @@ export function setupChartView(elements) {
     if (!chart) return;
     const m = margins();
     layout = makeLayout(chart, scale, {
-      originX: m.left - viewport.scrollLeft,
-      originY: -viewport.scrollTop,
+      screenX: m.left - viewport.scrollLeft,
+      screenY: -viewport.scrollTop,
+      rotated: isSideways(),
       clipX: m.left,
       clipBottom: m.bottom,
       gridLines: view.gridLines,
@@ -105,8 +127,8 @@ export function setupChartView(elements) {
   }
 
   function updateControls() {
-    const { width, height } = available();
-    const percent = Math.round((scale / autoScale(chart, width, height - margins().bottom)) * 100);
+    const room = roomForChart();
+    const percent = Math.round((scale / autoScale(chart, room.across, room.down)) * 100);
     elements.zoomLabel.textContent = `${percent}%`;
     // Only some stitches have grid lines (the stitch module says which).
     const stitch = getStitch(chart.stitch);
@@ -115,6 +137,7 @@ export function setupChartView(elements) {
     elements.gridLines.parentElement.title = stitch.gridLines ? '' : `These lines aren't available for ${stitch.label.toLowerCase()}`;
     elements.numbers.checked = view.numbers;
     elements.fit.setAttribute('aria-pressed', view.zoom === 'fit');
+    elements.sideways.setAttribute('aria-pressed', isSideways());
   }
 
   // Zoom, keeping the bead under `anchor` (canvas pixels) in the same place.
@@ -144,6 +167,14 @@ export function setupChartView(elements) {
   elements.zoomOut.addEventListener('click', () => zoomTo(scale / ZOOM_STEP));
   elements.fit.addEventListener('click', () => {
     view.zoom = 'fit';
+    saveView();
+    viewport.scrollTo(0, 0);
+    render();
+  });
+  // Turn the chart sideways (or back). Starts again at the first bead.
+  elements.sideways.addEventListener('click', () => {
+    if (isSideways()) delete view.sideways[chart.id];
+    else view.sideways[chart.id] = true;
     saveView();
     viewport.scrollTo(0, 0);
     render();

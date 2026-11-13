@@ -52,6 +52,7 @@ const chartView = setupChartView({
   zoomOut: document.querySelector('#zoom-out'),
   fit: document.querySelector('#zoom-fit'),
   zoomLabel: document.querySelector('#zoom-label'),
+  sideways: document.querySelector('#turn-sideways'),
   gridLines: document.querySelector('#show-grid-lines'),
   numbers: document.querySelector('#show-numbers'),
 });

@@ -12,7 +12,7 @@
 // Fill, Erase and each paste are one undo step.
 
 import { rectBetween, rectSize, beadsIn, clampRect, copyBeads, shapeAt, snapPosition } from './selection.js';
-import { drawSelection, drawPiece } from './grid.js';
+import { drawSelection, drawPiece, topLeftBead } from './grid.js';
 import { getStitch } from './stitches/index.js';
 import * as chart from './chart.js';
 
@@ -135,19 +135,18 @@ export function setupSelection(root, { pasteBar, chartView, getBrushColorId, isA
     showState(`Copied: ${describe(clipboard)}`);
   }
 
-  // The first whole bead at the top left of what's on screen.
-  function visibleTopLeft() {
-    const layout = chartView.getLayout();
-    return {
-      row: Math.max(0, Math.ceil(-layout.originY / layout.beadH)),
-      col: Math.max(0, Math.ceil((layout.clipX - layout.originX) / layout.beadW)),
-    };
-  }
-
   function paste() {
     if (!clipboard || floating) return;
     // Over the selection if there is one, otherwise at the top left of the screen.
-    const wanted = rect ? { row: rect.top, col: rect.left } : visibleTopLeft();
+    // (Turned sideways, the piece's rows run to the right of that corner bead,
+    // so its top-left bead is further up the chart.)
+    let wanted;
+    if (rect) wanted = { row: rect.top, col: rect.left };
+    else {
+      const layout = chartView.getLayout();
+      const corner = topLeftBead(layout);
+      wanted = layout.rotated ? { row: corner.row - clipboard.rows + 1, col: corner.col } : corner;
+    }
     const current = chart.getChart();
     floating = { piece: clipboard, at: snapPosition(getStitch(current.stitch), current, clipboard, wanted), grab: null };
     rect = null;

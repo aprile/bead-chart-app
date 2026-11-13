@@ -251,7 +251,8 @@
   color: var(--muted-foreground);
 }
 
-#zoom-fit[aria-pressed='true'] {
+#zoom-fit[aria-pressed='true'],
+#turn-sideways[aria-pressed='true'] {
   background: var(--secondary);
 }
 

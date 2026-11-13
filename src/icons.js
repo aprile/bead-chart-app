@@ -8,13 +8,13 @@
 import {
   createIcons,
   Check, ChevronDown, ClipboardPaste, Copy, Eraser, FilePlus, FolderOpen, ImagePlus, Minus,
-  PaintBucket, Paintbrush, Palette, PanelLeft, PanelRight, Pencil, Pipette, Plus, Redo2, Scan,
+  PaintBucket, Paintbrush, Palette, PanelLeft, PanelRight, Pencil, Pipette, Plus, Redo2, RotateCwSquare, Scan,
   Settings, SquareDashed, Trash2, TriangleAlert, Undo2, X,
 } from 'lucide';
 
 const icons = {
   Check, ChevronDown, ClipboardPaste, Copy, Eraser, FilePlus, FolderOpen, ImagePlus, Minus,
-  PaintBucket, Paintbrush, Palette, PanelLeft, PanelRight, Pencil, Pipette, Plus, Redo2, Scan,
+  PaintBucket, Paintbrush, Palette, PanelLeft, PanelRight, Pencil, Pipette, Plus, Redo2, RotateCwSquare, Scan,
   Settings, SquareDashed, Trash2, TriangleAlert, Undo2, X,
 };
 

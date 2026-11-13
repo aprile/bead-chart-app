@@ -221,7 +221,9 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
   - Step 3 done: **chart switcher**. The name box stays (type to rename); a ▾ menu next to it (Basecoat dropdown) lists the 8 most recent charts (✓ on the open one) plus New chart, Rename, Duplicate, Delete…, All charts… (`src/chart-menu.js`). The separate New chart button is gone.
   - Step 4a done: **My stash is a Basecoat dialog** over the chart (Stash in the top bar, Edit my stash in the palette; full screen on a phone), and the add/edit/delete colour forms are Basecoat dialogs. `#stash` is no longer a view. Old stash/form styles removed from `style.css`; new ones in `layout.css`.
   - Step 4b done: **Photo to chart** and **Pick colour from photo** are Basecoat dialogs (sliders use Basecoat's `range` script; full screen on a phone). No v1 dialogs are left; only the My charts and Calibration pages still use the v1 styles.
-  - **Milestone 3 done** (desktop). Next: milestone 4, phone/tablet layout.
+  - **Milestone 3 done** (desktop).
+  - Added 2026-11-13 (asked for before milestone 4): **turn sideways** button in the zoom controls. View only: the chart is drawn a quarter turn clockwise (row 1 on the left, rows running left to right, column 1 at the top); the beads, stitch and export don't change. Remembered per chart (`view.sideways` in the view settings). `grid.js` draws in chart space and turns it with one canvas transform; pointer positions are turned back, so painting, fill, selection and paste work unchanged. Numbers stay upright.
+  - Next: milestone 4, phone/tablet layout.
 
 ## Open questions
 - **Peyote even/odd count:** is it just whether the column count is even or odd? If so, work it out from `cols` instead of a separate `peyoteCount` setting. Needed by milestone 8 (working mode).
