@@ -36,7 +36,7 @@ export function setupPalette(container, { onSelect, onPick }) {
       swatches.innerHTML = `
         <p class="palette-empty">
           No ${beadSize} colours in your stash yet.
-          <a href="#stash">Add some on the stash screen</a>.
+          <button type="button" class="link-button" data-open="stash">Add some to your stash</button>.
         </p>`;
     } else {
       swatches.innerHTML = colors

@@ -1,5 +1,6 @@
-// The "My stash" screen: browse all colours, filter them, tick the ones I own,
-// add custom colours and edit screen colours.
+// The "My stash" dialog: browse all colours, filter them, tick the ones I own,
+// add custom colours and edit screen colours. It opens over the chart (from the
+// top bar or the palette's "Edit my stash" button).
 
 import {
   allColors, getColor, BEAD_SIZE_NAMES, FAMILIES, FINISHES,
@@ -16,8 +17,8 @@ function rowHtml(color) {
   const checkboxes = color.sizes
     .map(
       (size) => `
-        <label>
-          <input type="checkbox" data-size="${size}" ${isInStash(color.id, size) ? 'checked' : ''} />
+        <label class="label">
+          <input type="checkbox" class="input" data-size="${size}" ${isInStash(color.id, size) ? 'checked' : ''} />
           ${size}
         </label>`,
     )
@@ -26,8 +27,8 @@ function rowHtml(color) {
   // Small grey line under the name: finish for Miyuki colours, notes for custom ones.
   const details = color.custom ? color.notes ?? '' : color.finish.join(', ');
   const badges = [
-    color.custom && '<span class="v1-badge">custom</span>',
-    color.edited && '<span class="v1-badge">edited</span>',
+    color.custom && '<span class="badge" data-variant="secondary">custom</span>',
+    color.edited && '<span class="badge" data-variant="outline">edited</span>',
   ]
     .filter(Boolean)
     .join(' ');
@@ -40,15 +41,17 @@ function rowHtml(color) {
       <span class="swatch" style="background: ${escapeHtml(color.hex)}"></span>
       <span class="code">${escapeHtml(color.code ?? '')}</span>
       <span class="name">
-        ${escapeHtml(color.name)} ${badges}
+        <span class="name-line">${escapeHtml(color.name)} ${badges}</span>
         <small>${escapeHtml(details)}</small>
       </span>
       <span class="sizes">${checkboxes}</span>
-      <button type="button" class="row-action" data-action="${action}">${actionLabel}</button>
+      <button type="button" class="btn row-action" data-variant="ghost" data-size="sm" data-action="${action}">${actionLabel}</button>
     </li>`;
 }
 
-export function setupStashScreen(root) {
+// root: the stash <dialog>. onClose() runs when it closes (the palette may need updating).
+// Returns { open }.
+export function setupStashScreen(root, { onClose }) {
   const search = root.querySelector('#stash-search');
   const sizeFilter = root.querySelector('#stash-size');
   const familyFilter = root.querySelector('#stash-family');
@@ -146,5 +149,23 @@ export function setupStashScreen(root) {
     else dialogs.openScreenColor(color);
   });
 
+  // ---------- Opening and closing ----------
+
+  for (const button of root.querySelectorAll('[data-action="close"]')) {
+    button.addEventListener('click', () => root.close());
+  }
+  // A click on the dimmed area around the dialog closes it too.
+  root.addEventListener('click', (event) => {
+    if (event.target === root) root.close();
+  });
+  root.addEventListener('close', onClose);
+
   refresh();
+
+  return {
+    open() {
+      updateCounts();
+      root.showModal(); // showModal = the page behind can't be clicked
+    },
+  };
 }

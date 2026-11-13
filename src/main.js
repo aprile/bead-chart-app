@@ -347,7 +347,14 @@ setupAutosave((state) => {
 
 // ---------- Other screens ----------
 
-setupStashScreen(document.querySelector('#stash-view'));
+// My stash opens as a dialog over the chart. Any button with data-open="stash"
+// opens it (top bar, "Edit my stash", the empty palette's link).
+const stash = setupStashScreen(document.querySelector('#stash-dialog'), {
+  onClose: () => redraw(), // the palette shows the stash, and colours may have changed
+});
+document.addEventListener('click', (event) => {
+  if (event.target.closest('[data-open="stash"]')) stash.open();
+});
 setupCalibrationScreen(document.querySelector('#calibration-view'));
 
 const chartsScreen = setupChartsScreen(document.querySelector('#charts-view'), {

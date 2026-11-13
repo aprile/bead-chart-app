@@ -82,7 +82,6 @@
   color: var(--v1-text);
 }
 
-
 :where(.v1) button {
   font: inherit;
   font-size: 0.875rem;
@@ -136,11 +135,9 @@
   accent-color: var(--v1-accent);
 }
 
-
 :where(.v1) a {
   color: var(--v1-accent);
 }
-
 
 /* ---- Stash screen ---- */
 
@@ -148,97 +145,6 @@
   color: var(--v1-muted);
   font-size: 0.875rem;
   margin: 0 0 8px;
-}
-
-.stash-counts {
-  font-weight: 600;
-  margin: 0 0 16px;
-}
-
-.stash-filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 12px 16px;
-  margin-bottom: 12px;
-}
-
-.stash-filters label {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.875rem;
-  color: var(--v1-muted);
-}
-
-.stash-filters label.toggle {
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  color: var(--v1-text);
-  padding-bottom: 6px;
-}
-
-.stash-filters input[type='search'],
-.stash-filters select {
-  font: inherit;
-  color: var(--v1-text);
-  padding: 4px 8px;
-  border: 1px solid var(--v1-border);
-  border-radius: 4px;
-  background: var(--v1-panel);
-}
-
-.stash-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border-top: 1px solid var(--v1-border);
-}
-
-.stash-list li {
-  display: grid;
-  grid-template-columns: 28px 4.5em 1fr auto auto;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 4px;
-  border-bottom: 1px solid var(--v1-border);
-  /* The browser skips drawing rows that are off screen: keeps 622 rows fast */
-  content-visibility: auto;
-  contain-intrinsic-size: auto 48px;
-}
-
-.stash-list li[hidden] {
-  display: none;
-}
-
-.stash-list .swatch {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1px solid var(--v1-muted);
-}
-
-.stash-list .code {
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.stash-list .name small {
-  display: block;
-  color: var(--v1-muted);
-}
-
-.stash-list .sizes {
-  display: flex;
-  gap: 12px;
-}
-
-.stash-list .sizes label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.875rem;
-  cursor: pointer;
 }
 
 /* Anything with the hidden attribute stays hidden, whatever else its CSS says */
@@ -257,19 +163,6 @@
   border-color: currentColor;
 }
 
-.stash-top {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.stash-top .stash-counts {
-  margin: 0;
-}
-
 /* "v1-": Basecoat has its own .badge */
 .v1-badge {
   display: inline-block;
@@ -282,10 +175,6 @@
   border: 1px solid var(--v1-accent);
   color: var(--v1-accent);
   vertical-align: middle;
-}
-
-.stash-list .row-action {
-  padding: 4px 10px;
 }
 
 /* ---- Pop-up forms ---- */
@@ -304,65 +193,12 @@
   background: rgb(0 0 0 / 0.4);
 }
 
-.dialog-form h3 {
-  margin: 0 0 12px;
-}
-
-.dialog-form > label,
-.dialog-form fieldset {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 0 0 12px;
-  font-size: 0.875rem;
-  color: var(--v1-muted);
-}
-
-.dialog-form fieldset {
-  flex-direction: row;
-  gap: 16px;
-}
-
-.dialog-form fieldset label {
-  color: var(--v1-text);
-}
-
-.dialog-form input[type='text'],
-.dialog-form textarea,
-.dialog-form select {
-  font: inherit;
-  color: var(--v1-text);
-  padding: 6px 8px;
-  border: 1px solid var(--v1-border);
-  border-radius: 4px;
-  background: var(--v1-bg);
-}
-
-.dialog-form input[type='color'] {
-  width: 64px;
-  height: 36px;
-  padding: 2px;
-  border: 1px solid var(--v1-border);
-  border-radius: 4px;
-  background: var(--v1-bg);
-}
-
 .dialog-buttons {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
-}
-
-/* Delete sits on its own on the left */
-.dialog-buttons .danger[data-action='delete'] {
-  margin-right: auto;
-}
-
-.form-error {
-  color: #c62828;
-  margin: 0;
 }
 
 .swatch-inline {
@@ -378,19 +214,6 @@
 .swatch-inline.is-empty {
   border-style: dashed;
 }
-
-.replacement-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.replacement-row select {
-  flex: 1;
-  min-width: 0;
-}
-
-
 
 /* ---- My charts ---- */
 
@@ -660,24 +483,6 @@
   text-align: center;
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
-  color: var(--v1-muted);
-}
-
-
-/* ---- Colour box + "Pick from photo" button in the colour forms ---- */
-
-.dialog-form .color-field {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  margin: 0 0 12px;
-}
-
-.dialog-form .color-field label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 0.875rem;
   color: var(--v1-muted);
 }
 

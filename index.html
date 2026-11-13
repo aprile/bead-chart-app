@@ -47,7 +47,7 @@
         <nav class="view-switch" aria-label="Screens">
           <a href="#chart" class="btn" data-variant="ghost" data-size="sm"><i data-lucide="paintbrush"></i> Chart</a>
           <a href="#charts" class="btn" data-variant="ghost" data-size="sm"><i data-lucide="folder-open"></i> My charts</a>
-          <a href="#stash" class="btn" data-variant="ghost" data-size="sm"><i data-lucide="palette"></i> Stash</a>
+          <button type="button" class="btn" data-variant="ghost" data-size="sm" data-open="stash"><i data-lucide="palette"></i> Stash</button>
           <a href="#calibration" class="btn" data-variant="ghost" data-size="sm"><i data-lucide="settings"></i> Calibration</a>
         </nav>
 
@@ -183,7 +183,7 @@
             <div role="tabpanel" id="side-tabs-panel-1" aria-labelledby="side-tabs-tab-1" tabindex="-1" class="tab-content">
               <!-- My stash colours in this bead size; filled in by src/palette.js -->
               <div id="palette" class="palette" aria-label="Colours"></div>
-              <a href="#stash" class="btn edit-stash" data-variant="outline" data-size="sm"><i data-lucide="palette"></i> Edit my stash</a>
+              <button type="button" class="btn edit-stash" data-variant="outline" data-size="sm" data-open="stash"><i data-lucide="palette"></i> Edit my stash</button>
             </div>
 
             <div role="tabpanel" id="side-tabs-panel-2" aria-labelledby="side-tabs-tab-2" tabindex="-1" class="tab-content" hidden>
@@ -315,44 +315,6 @@
         <div id="calibration-list" class="calibration-list"></div>
       </section>
 
-      <section id="stash-view" hidden>
-        <h2>My stash</h2>
-        <p class="note">Screen colours are rough guesses from the colour names.</p>
-        <div class="stash-top">
-          <p id="stash-counts" class="stash-counts"></p>
-          <button type="button" id="add-color-button" class="primary">Add colour</button>
-        </div>
-
-        <div class="stash-filters">
-          <label>
-            Search
-            <input type="search" id="stash-search" placeholder="Code or name" />
-          </label>
-          <label>
-            Size
-            <select id="stash-size">
-              <option value="">All</option>
-              <option value="11/0">11/0</option>
-              <option value="15/0">15/0</option>
-            </select>
-          </label>
-          <label>
-            Colour family
-            <select id="stash-family"><option value="">All</option></select>
-          </label>
-          <label>
-            Finish
-            <select id="stash-finish"><option value="">All</option></select>
-          </label>
-          <label class="toggle">
-            <input type="checkbox" id="stash-only" /> Show only my stash
-          </label>
-        </div>
-
-        <p id="stash-showing" class="note"></p>
-        <!-- Filled in by src/stash-screen.js -->
-        <ul id="stash-list" class="stash-list"></ul>
-      </section>
         </div>
       </div>
     </div>
@@ -471,85 +433,156 @@
         </div>
       </dialog>
 
-      <!-- Pop-up forms for colours (src/color-dialogs.js) -->
+    </div>
+    <!-- My stash (src/stash-screen.js). Opens over the chart. -->
+    <dialog id="stash-dialog" class="dialog stash-dialog" aria-labelledby="stash-title">
+      <div>
+        <header>
+          <h2 id="stash-title">My stash</h2>
+          <p>Tick the colours you own in each size. Screen colours are rough guesses from the colour names.</p>
+        </header>
 
-      <dialog id="custom-color-dialog">
-        <form class="dialog-form">
-          <h3 class="dialog-title">Add colour</h3>
-          <label>
-            Name
-            <input type="text" name="name" required maxlength="80" placeholder="e.g. Grandma's teal" />
-          </label>
-          <div class="color-field">
-            <label>
-              Screen colour
-              <input type="color" name="hex" value="#888888" />
-            </label>
-            <button type="button" data-action="pick-photo">Pick from photo…</button>
+        <section class="stash-body">
+          <div class="stash-top">
+            <p id="stash-counts" class="stash-counts"></p>
+            <button type="button" id="add-color-button" class="btn" data-size="sm">
+              <i data-lucide="plus"></i> Add colour
+            </button>
           </div>
-          <fieldset>
-            <legend>Sizes</legend>
-            <label><input type="checkbox" name="sizes" value="11/0" /> 11/0</label>
-            <label><input type="checkbox" name="sizes" value="15/0" /> 15/0</label>
+
+          <div class="stash-filters">
+            <div class="field stash-search">
+              <label for="stash-search">Search</label>
+              <input type="search" id="stash-search" placeholder="Code or name" />
+            </div>
+            <div class="field">
+              <label for="stash-size">Size</label>
+              <select id="stash-size">
+                <option value="">All</option>
+                <option value="11/0">11/0</option>
+                <option value="15/0">15/0</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="stash-family">Colour family</label>
+              <select id="stash-family"><option value="">All</option></select>
+            </div>
+            <div class="field">
+              <label for="stash-finish">Finish</label>
+              <select id="stash-finish"><option value="">All</option></select>
+            </div>
+            <label class="label stash-only">
+              <input type="checkbox" role="switch" class="input" id="stash-only" /> Show only my stash
+            </label>
+          </div>
+
+          <p id="stash-showing" class="stash-showing"></p>
+          <!-- Filled in by src/stash-screen.js -->
+          <ul id="stash-list" class="stash-list"></ul>
+        </section>
+
+        <footer>
+          <button type="button" class="btn" data-action="close">Done</button>
+        </footer>
+        <button type="button" aria-label="Close" data-action="close"><i data-lucide="x"></i></button>
+      </div>
+    </dialog>
+
+    <!-- Pop-up forms for colours (src/color-dialogs.js). They open over the stash. -->
+    <dialog id="custom-color-dialog" class="dialog color-dialog" aria-labelledby="custom-color-title">
+      <form class="form">
+        <header>
+          <h2 id="custom-color-title" class="dialog-title">Add colour</h2>
+        </header>
+        <section class="color-form-fields">
+          <div class="field">
+            <label for="custom-name">Name</label>
+            <input type="text" id="custom-name" name="name" required maxlength="80" placeholder="e.g. Grandma's teal" />
+          </div>
+          <div class="field">
+            <label for="custom-hex">Screen colour</label>
+            <div class="color-field">
+              <input type="color" id="custom-hex" name="hex" value="#888888" />
+              <button type="button" class="btn" data-variant="outline" data-size="sm" data-action="pick-photo">
+                <i data-lucide="pipette"></i> Pick from photo…
+              </button>
+            </div>
+          </div>
+          <fieldset class="fieldset">
+            <legend class="label">Sizes</legend>
+            <div class="size-checks">
+              <label class="label"><input type="checkbox" class="input" name="sizes" value="11/0" /> 11/0</label>
+              <label class="label"><input type="checkbox" class="input" name="sizes" value="15/0" /> 15/0</label>
+            </div>
           </fieldset>
-          <label>
-            Code (optional)
-            <input type="text" name="code" maxlength="20" />
-          </label>
-          <label>
-            Notes (optional)
-            <textarea name="notes" rows="2" maxlength="500" placeholder="e.g. brand, where I bought it"></textarea>
-          </label>
-          <p class="form-error" hidden></p>
-          <div class="dialog-buttons">
-            <button type="button" class="danger" data-action="delete">Delete</button>
-            <button type="button" data-action="cancel">Cancel</button>
-            <button type="submit" class="primary">Save</button>
+          <div class="field">
+            <label for="custom-code">Code (optional)</label>
+            <input type="text" id="custom-code" name="code" maxlength="20" />
           </div>
-        </form>
-      </dialog>
+          <div class="field">
+            <label for="custom-notes">Notes (optional)</label>
+            <textarea id="custom-notes" name="notes" rows="2" maxlength="500" placeholder="e.g. brand, where I bought it"></textarea>
+          </div>
+          <p class="form-error" role="alert" hidden></p>
+        </section>
+        <footer>
+          <button type="button" class="btn delete-left" data-variant="destructive" data-action="delete">Delete</button>
+          <button type="button" class="btn" data-variant="outline" data-action="cancel">Cancel</button>
+          <button type="submit" class="btn">Save</button>
+        </footer>
+      </form>
+    </dialog>
 
-      <dialog id="screen-color-dialog">
-        <form class="dialog-form">
-          <h3>Edit screen colour</h3>
+    <dialog id="screen-color-dialog" class="dialog color-dialog" aria-labelledby="screen-color-title">
+      <form class="form">
+        <header>
+          <h2 id="screen-color-title">Edit screen colour</h2>
           <p class="dialog-color-name"></p>
-          <div class="color-field">
-            <label>
-              Screen colour
-              <input type="color" name="hex" />
-            </label>
-            <button type="button" data-action="pick-photo">Pick from photo…</button>
+        </header>
+        <section class="color-form-fields">
+          <div class="field">
+            <label for="screen-hex">Screen colour</label>
+            <div class="color-field">
+              <input type="color" id="screen-hex" name="hex" />
+              <button type="button" class="btn" data-variant="outline" data-size="sm" data-action="pick-photo">
+                <i data-lucide="pipette"></i> Pick from photo…
+              </button>
+            </div>
           </div>
-          <p class="note">
+          <p class="estimated">
             Estimated colour: <span class="swatch-inline estimated-swatch"></span>
             <span class="estimated-hex"></span>
           </p>
-          <div class="dialog-buttons">
-            <button type="button" data-action="reset">Reset to estimated colour</button>
-            <button type="button" data-action="cancel">Cancel</button>
-            <button type="submit" class="primary">Save</button>
-          </div>
-        </form>
-      </dialog>
+        </section>
+        <footer>
+          <button type="button" class="btn delete-left" data-variant="ghost" data-action="reset">Reset to estimated</button>
+          <button type="button" class="btn" data-variant="outline" data-action="cancel">Cancel</button>
+          <button type="submit" class="btn">Save</button>
+        </footer>
+      </form>
+    </dialog>
 
-      <dialog id="delete-color-dialog">
-        <form class="dialog-form">
-          <h3>Delete colour?</h3>
+    <dialog id="delete-color-dialog" class="dialog color-dialog" aria-labelledby="delete-color-title">
+      <form class="form">
+        <header>
+          <h2 id="delete-color-title">Delete colour?</h2>
           <p class="delete-message"></p>
-          <label>
-            Replace those beads with
+        </header>
+        <section class="color-form-fields">
+          <div class="field">
+            <label for="delete-replacement">Replace those beads with</label>
             <span class="replacement-row">
               <span class="swatch-inline replacement-swatch"></span>
-              <select name="replacement"></select>
+              <select id="delete-replacement" name="replacement"></select>
             </span>
-          </label>
-          <div class="dialog-buttons">
-            <button type="button" data-action="cancel">Cancel</button>
-            <button type="submit" class="danger">Delete and replace</button>
           </div>
-        </form>
-      </dialog>
-    </div>
+        </section>
+        <footer>
+          <button type="button" class="btn" data-variant="outline" data-action="cancel">Cancel</button>
+          <button type="submit" class="btn" data-variant="destructive">Delete and replace</button>
+        </footer>
+      </form>
+    </dialog>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

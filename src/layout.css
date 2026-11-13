@@ -394,3 +394,214 @@
   margin: 0 auto;
   padding: 24px 16px;
 }
+
+/* ---------- Dialogs ---------- */
+
+/* A button that looks like a link (e.g. "Add some to your stash") */
+.link-button {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+/* My stash: wide, with only the colour list scrolling.
+   (Basecoat makes dialogs narrow; these override that.) */
+.stash-dialog > div {
+  width: min(56rem, calc(100% - 2rem));
+  max-width: none;
+  height: min(48rem, calc(100% - 2rem));
+}
+
+.stash-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0; /* lets the list shrink and scroll instead of growing the dialog */
+}
+
+.stash-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.stash-counts {
+  font-weight: 500;
+}
+
+.stash-filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr 1.5fr; /* search, size, family, finish */
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.stash-filters select {
+  width: 100%;
+}
+
+/* "Show only my stash" on its own line under the filters */
+.stash-only {
+  grid-column: 1 / -1;
+  width: fit-content;
+}
+
+.stash-showing {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.stash-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 -1rem; /* rows reach the dialog's edges */
+  padding: 0 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.stash-list li {
+  display: grid;
+  grid-template-columns: 1.75rem 3.5rem 1fr auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid var(--border);
+  /* The browser skips drawing rows that are off screen: keeps 622 rows fast */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3rem;
+}
+
+.stash-list .swatch {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
+
+.stash-list .code {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.stash-list .name-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.stash-list .name small {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.stash-list .sizes {
+  display: flex;
+  gap: 0.75rem;
+  min-width: 8rem; /* so a colour with one size lines up with the others */
+}
+
+/* Phone: the stash fills the screen, and each row wraps onto two lines */
+@media (max-width: 640px) {
+  .stash-dialog > div {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+  }
+
+  .stash-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stash-filters .stash-search {
+    grid-column: 1 / -1;
+  }
+
+  .stash-list .sizes {
+    min-width: 0;
+  }
+
+  .stash-list li {
+    grid-template-columns: 1.75rem auto 1fr auto;
+    grid-template-areas:
+      'swatch code name action'
+      'swatch sizes sizes sizes';
+    row-gap: 0.25rem;
+  }
+  .stash-list .swatch { grid-area: swatch; }
+  .stash-list .code { grid-area: code; }
+  .stash-list .name { grid-area: name; }
+  .stash-list .sizes { grid-area: sizes; }
+  .stash-list .row-action { grid-area: action; }
+}
+
+/* The small colour forms (add colour, edit screen colour, delete colour) */
+.color-dialog > form {
+  width: min(26rem, calc(100% - 2rem));
+  max-width: none;
+}
+
+.color-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.color-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.color-field input[type='color'] {
+  width: 4rem;
+  height: 2.25rem;
+  padding: 0.125rem;
+  border: 1px solid var(--input);
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
+}
+
+.size-checks {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+/* Delete / Reset sit on their own on the left */
+.color-dialog footer .delete-left {
+  margin-inline-end: auto;
+}
+
+.form-error {
+  color: var(--destructive);
+}
+
+.estimated {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted-foreground);
+}
+
+.replacement-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.replacement-row select {
+  flex: 1;
+  min-width: 0;
+}
