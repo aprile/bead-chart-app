@@ -12,7 +12,7 @@
 // Fill, Erase and each paste are one undo step.
 
 import { rectBetween, rectSize, beadsIn, clampRect, copyBeads, shapeAt, snapPosition } from './selection.js';
-import { drawSelection, drawPiece, topLeftBead } from './grid.js';
+import { drawSelection, drawPiece, topLeftBead, beadsMoved } from './grid.js';
 import { getStitch } from './stitches/index.js';
 import * as chart from './chart.js';
 
@@ -38,7 +38,8 @@ export function setupSelection(root, { pasteBar, chartView, getBrushColorId, isA
   let rect = null; // the selection (see selection.js), or null
   let dragStart = null; // the bead where the current selection drag began
   // A pasted piece that hasn't been dropped yet:
-  // { piece, at: { row, col } (its top-left bead), grab: where a drag picked it up, or null }
+  // { piece, at: { row, col } (its top-left bead),
+  //   grab: { point, at } where a drag picked it up and where the piece was then, or null }
   let floating = null;
 
   // The rectangle a floating piece covers.
@@ -85,8 +86,8 @@ export function setupSelection(root, { pasteBar, chartView, getBrushColorId, isA
 
   // ---------- Dragging on the chart (called by painting.js) ----------
 
-  function onDrag(phase, bead) {
-    if (floating) dragPiece(phase, bead);
+  function onDrag(phase, bead, point) {
+    if (floating) dragPiece(phase, bead, point);
     else dragSelection(phase, bead);
   }
 
@@ -102,15 +103,19 @@ export function setupSelection(root, { pasteBar, chartView, getBrushColorId, isA
     }
   }
 
-  function dragPiece(phase, bead) {
+  // The piece moves by how far the pointer has moved (in whole beads), not by
+  // which bead is under it: on brick and peyote the bead under the pointer
+  // jumps between columns (or rows) as you cross the half-bead shifts.
+  function dragPiece(phase, bead, point) {
     if (phase === 'start') {
       const r = pieceRect();
       const onPiece = bead && bead.row >= r.top && bead.row <= r.bottom && bead.col >= r.left && bead.col <= r.right;
-      if (onPiece) floating.grab = { bead, at: floating.at };
+      if (onPiece) floating.grab = { point, at: floating.at };
       else commitPaste(); // a click outside the piece drops it
-    } else if (phase === 'move' && bead && floating?.grab) {
+    } else if (phase === 'move' && floating?.grab) {
       const { grab } = floating;
-      const wanted = { row: grab.at.row + bead.row - grab.bead.row, col: grab.at.col + bead.col - grab.bead.col };
+      const moved = beadsMoved(chartView.getLayout(), grab.point, point);
+      const wanted = { row: grab.at.row + moved.rows, col: grab.at.col + moved.cols };
       const current = chart.getChart();
       const at = snapPosition(getStitch(current.stitch), current, floating.piece, wanted);
       if (at.row !== floating.at.row || at.col !== floating.at.col) {
@@ -137,16 +142,16 @@ export function setupSelection(root, { pasteBar, chartView, getBrushColorId, isA
 
   function paste() {
     if (!clipboard || floating) return;
-    // Over the selection if there is one, otherwise at the top left of the screen.
-    // (Turned sideways, the piece's rows run to the right of that corner bead,
-    // so its top-left bead is further up the chart.)
-    let wanted;
-    if (rect) wanted = { row: rect.top, col: rect.left };
-    else {
-      const layout = chartView.getLayout();
-      const corner = topLeftBead(layout);
-      wanted = layout.rotated ? { row: corner.row - clipboard.rows + 1, col: corner.col } : corner;
-    }
+    // The piece's top-left corner, as you see it, goes at the top-left corner
+    // of the selection if there is one, otherwise of the screen.
+    // Turned sideways, the top left on screen is the selection's bottom row
+    // (row 1 is on the left), and the piece's rows run to the right of it,
+    // so the piece's first row in the chart is further up.
+    const layout = chartView.getLayout();
+    let corner;
+    if (rect) corner = layout.rotated ? { row: rect.bottom, col: rect.left } : { row: rect.top, col: rect.left };
+    else corner = topLeftBead(layout);
+    const wanted = layout.rotated ? { row: corner.row - clipboard.rows + 1, col: corner.col } : corner;
     const current = chart.getChart();
     floating = { piece: clipboard, at: snapPosition(getStitch(current.stitch), current, clipboard, wanted), grab: null };
     rect = null;

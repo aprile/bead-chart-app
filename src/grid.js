@@ -271,6 +271,16 @@ function visibleRange(layout) {
   };
 }
 
+// How far the pointer moved between two points on the canvas, counted in
+// whole beads down the chart (rows) and across it (cols). It works the same
+// when the chart is turned sideways, and isn't thrown off by beads that are
+// shifted by half a bead (brick, peyote).
+export function beadsMoved(layout, from, to) {
+  const a = screenToChart(layout, from.x, from.y);
+  const b = screenToChart(layout, to.x, to.y);
+  return { rows: Math.round((b.y - a.y) / layout.beadH), cols: Math.round((b.x - a.x) / layout.beadW) };
+}
+
 // The bead in the top-left corner of what's on screen, as you see it
 // (e.g. where a paste starts). Turned sideways, that's the left-most column
 // and the bottom-most row on screen.

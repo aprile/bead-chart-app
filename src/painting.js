@@ -13,7 +13,8 @@ import { beadAtPoint, drawBead } from './grid.js';
 // onBeadClick(tool, { row, col }) → a click with fill or the picker
 // isPasting()  → true while a pasted piece floats over the chart: then any
 //                drag goes to onSelectDrag (to move the piece), whatever the tool
-// onSelectDrag(phase, { row, col } or null) → a drag with select (or while pasting);
+// onSelectDrag(phase, { row, col } or null, point) → a drag with select (or while pasting);
+//                point = the pointer position { x, y } on the canvas;
 //                phase is 'start', 'move' or 'end'. The bead is null when
 //                the pointer isn't over one (e.g. off the edge of the chart).
 export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getTool, onBeadClick, isPasting, onSelectDrag }) {
@@ -65,7 +66,7 @@ export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getT
     canvas.setPointerCapture(event.pointerId);
     if (tool === 'select') {
       selecting = true;
-      onSelectDrag('start', beadUnder(event));
+      onSelectDrag('start', beadUnder(event), pointFrom(event));
       return;
     }
     beginStroke();
@@ -80,7 +81,7 @@ export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getT
 
   canvas.addEventListener('pointermove', (event) => {
     if (selecting) {
-      onSelectDrag('move', beadUnder(event));
+      onSelectDrag('move', beadUnder(event), pointFrom(event));
       return;
     }
     if (!lastPoint) return; // not dragging
@@ -92,7 +93,7 @@ export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getT
   function finish() {
     if (selecting) {
       selecting = false;
-      onSelectDrag('end', null);
+      onSelectDrag('end', null, null);
       return;
     }
     if (!lastPoint) return;

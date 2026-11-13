@@ -142,7 +142,7 @@ setupPainting(canvas, {
     else pickFrom(row, col);
   },
   isPasting: () => selection.isPasting(),
-  onSelectDrag: (phase, bead) => selection.onDrag(phase, bead),
+  onSelectDrag: (phase, bead, point) => selection.onDrag(phase, bead, point),
   onStrokeEnd() {
     chartView.repaint(); // painting redraws single beads, which can cover the selection outline
     updateButtons();
