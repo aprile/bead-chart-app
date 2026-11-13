@@ -4,11 +4,12 @@
 // Chart shape (from PLAN-V2.md, plus an id and dates for saving):
 // { id, version: 2, name, stitch, beadSize, widthMm, heightMm, cols, rows,
 //   beads: [[color id or null, ...], ...],   ← beads[row][col], null = empty
-//   background,                               ← e.g. "#faf9f7"
+//   backgroundBead,                           ← colour id every empty bead is stitched in, or null
 //   createdAt, updatedAt }                    ← times in milliseconds
 // Older (v1) charts are upgraded when they're loaded: see migrate.js.
 
-import { CHART_VERSION, DEFAULT_BACKGROUND } from './migrate.js';
+import { CHART_VERSION } from './migrate.js';
+import { countBeadsOf, replaceColorIn } from './chart-colors.js';
 
 export const DEFAULT_NAME = 'Untitled chart';
 
@@ -83,7 +84,7 @@ export function newChart(settings, name = DEFAULT_NAME) {
     cols: settings.cols,
     rows: settings.rows,
     beads: emptyBeads(settings.cols, settings.rows),
-    background: DEFAULT_BACKGROUND,
+    backgroundBead: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -154,21 +155,27 @@ export function endResize() {
 
 // ---- Colours used in the chart ----
 
+// Includes the empty beads if this colour is the background bead.
 export function countColor(colorId) {
-  return chart.beads.flat().filter((bead) => bead === colorId).length;
+  return countBeadsOf(chart, colorId);
 }
 
 // Swap one colour for another in the chart AND in the undo/redo history,
 // so undo can never bring back a colour that's been deleted.
 export function replaceColorEverywhere(oldId, newId) {
   endResize();
-  for (const version of [chart, ...undoStack, ...redoStack]) {
-    for (const row of version.beads) {
-      row.forEach((bead, col) => {
-        if (bead === oldId) row[col] = newId;
-      });
-    }
-  }
+  for (const version of [chart, ...undoStack, ...redoStack]) replaceColorIn(version, oldId, newId);
+  notify();
+}
+
+// ---- Background bead ----
+
+// The colour every empty bead is stitched in (null = none). One undo step.
+export function setBackgroundBead(colorId) {
+  endResize();
+  if (chart.backgroundBead === colorId) return;
+  saveUndoStep(copyChart(chart));
+  chart.backgroundBead = colorId;
   notify();
 }
 

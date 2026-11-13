@@ -110,7 +110,7 @@ export function setupChartView(elements) {
     const stitch = getStitch(chart.stitch);
     elements.gridLines.disabled = !stitch.gridLines;
     elements.gridLines.checked = view.gridLines && stitch.gridLines;
-    elements.gridLines.parentElement.title = stitch.gridLines ? '' : `Grid lines aren't available for ${stitch.label.toLowerCase()}`;
+    elements.gridLines.parentElement.title = stitch.gridLines ? '' : `These lines aren't available for ${stitch.label.toLowerCase()}`;
     elements.numbers.checked = view.numbers;
     elements.fit.setAttribute('aria-pressed', view.zoom === 'fit');
   }

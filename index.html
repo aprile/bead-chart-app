@@ -185,9 +185,25 @@
                 <output id="size-result" class="size-result" for="new-chart-form"></output>
               </form>
 
+              <!-- The colour every empty bead is stitched in (set per chart) -->
+              <section class="background-bead">
+                <h2 class="panel-heading">Background bead</h2>
+                <p class="background-current">
+                  <span id="background-swatch" class="current-swatch"></span>
+                  <span id="background-name"></span>
+                </p>
+                <div class="background-buttons">
+                  <button type="button" class="btn" data-variant="outline" data-size="sm" id="background-use-brush">
+                    Use brush colour
+                  </button>
+                  <button type="button" class="btn" data-variant="ghost" data-size="sm" id="background-none">None</button>
+                </div>
+                <p class="panel-hint">Empty beads are drawn in this colour, ready to stitch. The eraser paints beads back to it.</p>
+              </section>
+
               <section class="view-options">
                 <h2 class="panel-heading">View</h2>
-                <label class="label"><input type="checkbox" role="switch" class="input" id="show-grid-lines" /> Grid lines</label>
+                <label class="label"><input type="checkbox" role="switch" class="input" id="show-grid-lines" /> Lines every 10 beads</label>
                 <label class="label"><input type="checkbox" role="switch" class="input" id="show-numbers" /> Row &amp; column numbers</label>
               </section>
             </div>

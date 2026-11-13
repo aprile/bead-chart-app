@@ -8,7 +8,8 @@ Builds on `PLAN.md` (v1). Everything there still applies unless this doc changes
 3. **Design polish** with **Basecoat**, the shadcn/ui design system without React.
 4. **Single-file export/import:** one chart as `.json`, and a chart picture as `.png`. The full backup stays as it is.
 5. **Working mode:** switch between drawing and working. In working mode I mark my current row *and* the exact bead I'm on.
-6. **Canvas background colour**, set per chart.
+6. **Background bead**, set per chart (changed 2026-11-13 from a canvas colour, see section 6).
+7. **Marquee selection** with copy/paste, fill and erase (added 2026-11-13, see section 7).
 
 ## Decisions (2026-11-12)
 - **Components:** Basecoat (shadcn/ui look and themes, plain JavaScript). Real shadcn/ui needs React, which would mean rewriting the interface, so I chose not to use it.
@@ -156,10 +157,21 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
 - **Reset progress** asks first.
 - If I go back to drawing mode and change the chart size, progress outside the new size is cleared.
 
-## 6. Background colour
-- Set per chart in the **Chart** tab: presets (white, cream, light grey, dark grey, black) plus the colour picker.
-- Empty cells are drawn as faint outlines on top of it. **Grid line colour adjusts automatically** so it stays visible on dark backgrounds.
-- Saved in the chart and used in the PNG export (unless "transparent" is chosen).
+## 6. Background bead (changed 2026-11-13)
+- Instead of a canvas colour, each chart can have a **background bead**: a stash colour that every empty bead is stitched in. Set in the **Chart** tab ("Use brush colour" / "None"). Changing it is one undo step.
+- Empty beads are drawn in that colour, so they look like (and are) real beads. With no background bead they stay light grey.
+- The eraser paints beads back to the background bead. The picker on an empty bead still switches to the eraser.
+- Counted like a colour: deleting a stash colour that's the background asks for a replacement, and colour counts include the empty beads.
+- **10-bead lines** turn light on a dark background bead so they stay visible.
+- The PNG export (milestone 7) draws empty beads in the background bead colour; "transparent" leaves them out.
+
+## 7. Marquee selection (added 2026-11-13)
+- A **Select** tool: drag a rectangle of beads (rows × columns, so on brick/peyote the edges follow the beads).
+- With a selection: **copy**, **paste**, **fill** (with the brush colour) and **erase**.
+- **Paste** puts the copied beads over the chart as a floating piece. Drag it into place, then drop it (Enter, click outside or a Done button). Esc cancels.
+- **Empty beads in the copy are see-through:** they leave the beads underneath alone.
+- **Snap to keep the shape:** on stitches with offsets the piece only moves in steps that keep the same offsets (every 2nd row on brick, 4th row on two-drop brick, 2nd column on peyote). The step comes from the stitch module.
+- Each paste, fill or erase is one undo step.
 
 ## Data changes (version 2)
 - **Chart:**
@@ -171,20 +183,20 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
     peyoteCount?: "even" | "odd",
     beadSize, widthMm, heightMm, cols, rows,
     beads: [[colorId | null, ...], ...],
-    background: "#f5f1ea",
+    backgroundBead: colorId | null,       // was `background: "#f5f1ea"` (never used); upgraded on load
     progress?: { step, doneRows: [..] }   // step = position in the stitch's reading order
   }
   ```
 - **Single chart file:** `{ type: "bead-chart", version: 2, chart, customColors: [...], hexOverrides: { id: hex } }`
 - **Calibration:** keyed by stitch and bead size.
-- **Migration:** when the app loads v1 data (localStorage or an imported file), it adds `version: 2`, a default background and no progress. Nothing else changes, so v1 charts open as they were.
+- **Migration:** when the app loads v1 data (localStorage or an imported file), it adds `version: 2`, no background bead (`backgroundBead: null`) and no progress. Nothing else changes, so v1 charts open as they were.
 
 ## Build order (milestones)
 1. **Stitch modules:** move loom and brick into modules with no visible change, and add `version` + migration. Check v1 charts look identical.
 2. **New stitches:** square, then two-drop brick, then peyote (the trickiest because of the vertical offset and zig-zag rows).
 3. **Tailwind + Basecoat + new layout:** install, pick a theme, the canvas-first shell, side panels, chart switcher, dialogs for stash and photo import.
 4. **Phone/tablet layout:** bottom panel, touch gestures (pinch zoom, pan, paint), bigger touch targets. Test on a real phone with `npm run dev -- --host`.
-5. **Background colour**, with automatic grid line contrast.
+5. ~~Background colour~~ (done early as the background bead, see section 6).
 6. **Single chart export/import** (.json), including the custom colour merge rules and the share sheet.
 7. **PNG export** with the optional colour key.
 8. **Working mode:** switch, row/bead marker, progress panel, phone controls, keyboard shortcuts, keep screen on, saved progress, peyote and two-drop rows.
@@ -205,7 +217,8 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
   - Step 2a: Tailwind's preflight is on. The v1 CSS (`style.css`) is in a `v1` layer below Basecoat, and only applies inside `class="v1"` (its colours are `--v1-*`, its badge is `.v1-badge`). Screens drop `v1` as they're rebuilt.
   - Step 2b: canvas-first layout (desktop). Top bar (panel toggles, chart name, New chart, screen links), left Tools panel (brush/eraser, undo/redo/clear, import photo), canvas filling the middle with floating zoom controls, right panel with Palette / Chart tabs. Panels can be hidden (remembered). Other screens still v1, in a scrolling area. Styles in `src/layout.css` (layer `app`).
   - Added (from the layout sketch, agreed 2026-11-12): **fill** and **picker** tools. Fill paints the joined beads of one colour (one undo step); "joined" = cells sharing an edge, worked out from each stitch module's `cellOffset` (`neighbours()` in `src/stitches/index.js`). Picker chooses a bead's colour in the palette (empty bead → eraser).
-  - Next: 3 chart switcher, 4 stash + photo import as dialogs.
+  - Added 2026-11-13 (asked for before polish): grid lines show only every 10th line ("Lines every 10 beads"); **background bead** per chart (section 6, pulled forward from milestone 5); next, **marquee selection** (section 7).
+  - Then: 3 chart switcher, 4 stash + photo import as dialogs.
 
 ## Open questions
 - **Peyote even/odd count:** is it just whether the column count is even or odd? If so, work it out from `cols` instead of a separate `peyoteCount` setting. Needed by milestone 8 (working mode).

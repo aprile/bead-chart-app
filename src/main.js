@@ -9,6 +9,7 @@ import { setupTools } from './tools.js';
 import { joinedArea } from './fill.js';
 import { setupNewChartPanel } from './new-chart-panel.js';
 import { setupPalette } from './palette.js';
+import { setupBackgroundBead } from './background-bead.js';
 import { setupPainting } from './painting.js';
 import { setupStashScreen } from './stash-screen.js';
 import { setupChartsScreen } from './charts-screen.js';
@@ -60,6 +61,7 @@ function redraw() {
   const current = chart.getChart();
   chartView.render(current);
   palette.show(current.beadSize); // the bead size or stash may have changed
+  backgroundBead.show(current);
   updateButtons();
   updateMissingNote();
 }
@@ -91,8 +93,20 @@ const panel = setupNewChartPanel(document.querySelector('#new-chart-form'), {
 // Brush and eraser (left panel). The brush uses the colour chosen in the palette.
 const tools = setupTools(document.querySelector('#left-panel'));
 
+// Background bead (Chart tab). Changing it is one undo step.
+const backgroundBead = setupBackgroundBead(document.querySelector('#right-panel'), {
+  getBrushColorId: () => palette.getSelectedColorId(),
+  onChoose(colorId) {
+    chart.setBackgroundBead(colorId);
+    redraw();
+  },
+});
+
 const palette = setupPalette(document.querySelector('#palette'), {
-  onSelect: (colorId) => tools.showColor(colorId),
+  onSelect(colorId) {
+    tools.showColor(colorId);
+    if (chart.getChart()) backgroundBead.show(chart.getChart()); // "Use brush colour" depends on the brush colour
+  },
   onPick: () => tools.setTool('brush'), // clicking a colour switches back to the brush
 });
 

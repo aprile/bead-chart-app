@@ -294,6 +294,33 @@
   border-top: 1px solid var(--border);
 }
 
+/* Background bead (Chart tab) */
+.background-bead {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.background-current {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.background-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.625rem;
+}
+
+.panel-hint {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
 /* A switch that can't be used right now (e.g. grid lines on a brick chart) */
 .view-options label:has(input:disabled) {
   color: var(--muted-foreground);

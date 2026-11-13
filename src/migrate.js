@@ -1,24 +1,21 @@
 // Upgrading saved data from older versions of the app.
 //
-// Version 1 charts have no `version` and no `background`. Upgrading adds
-// `version: 2` and the default background; nothing else changes, so v1
-// charts open exactly as they were.
+// Version 1 charts have no `version` and no background bead. Upgrading adds
+// `version: 2` and no background bead; nothing else changes, so v1 charts
+// open exactly as they were.
+//
+// Early version 2 charts had `background` (a canvas colour, never used).
+// It's replaced by `backgroundBead`: a colour id, or null for none.
 
 export const CHART_VERSION = 2;
-
-// The page background colour, so charts look the same as before.
-// (It isn't drawn yet: the background colour setting comes in a later milestone.)
-export const DEFAULT_BACKGROUND = '#faf9f7';
 
 // Returns an upgraded copy of a chart. Anything that isn't a chart object
 // is returned as it is, so the normal check can reject it.
 export function upgradeChart(chart) {
   if (chart === null || typeof chart !== 'object' || Array.isArray(chart)) return chart;
-  if (chart.version === CHART_VERSION) return chart;
-  if (chart.version !== undefined && chart.version !== 1) return chart; // unknown version: let the check reject it
-  return {
-    ...chart,
-    version: CHART_VERSION,
-    background: typeof chart.background === 'string' ? chart.background : DEFAULT_BACKGROUND,
-  };
+  const known = chart.version === undefined || chart.version === 1 || chart.version === CHART_VERSION;
+  if (!known) return chart; // unknown version: let the check reject it
+  if (chart.version === CHART_VERSION && Object.hasOwn(chart, 'backgroundBead')) return chart; // already up to date
+  const { background, ...rest } = chart; // drop the old, unused canvas colour
+  return { ...rest, version: CHART_VERSION, backgroundBead: null };
 }

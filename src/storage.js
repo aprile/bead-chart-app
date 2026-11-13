@@ -3,6 +3,7 @@
 import { BEAD_SIZES } from './beads.js';
 import { isStitch } from './stitches/index.js';
 import { CHART_VERSION, upgradeChart } from './migrate.js';
+import { countBeadsOf, replaceColorIn } from './chart-colors.js';
 
 // All localStorage keys start with this, so they don't mix with anything else.
 const PREFIX = 'bead-chart-app.';
@@ -72,7 +73,7 @@ export function isValidChart(chart) {
     chart.version === CHART_VERSION &&
     typeof chart.name === 'string' &&
     isStitch(chart.stitch) &&
-    HEX.test(chart.background) &&
+    (chart.backgroundBead === null || typeof chart.backgroundBead === 'string') &&
     Object.hasOwn(BEAD_SIZES, chart.beadSize) &&
     isPositiveNumber(chart.widthMm) &&
     isPositiveNumber(chart.heightMm) &&
@@ -174,7 +175,7 @@ export function setCurrentChartId(id) {
 }
 
 function countIn(chart, colorId) {
-  return chart.beads.flat().filter((bead) => bead === colorId).length;
+  return countBeadsOf(chart, colorId); // includes the background bead
 }
 
 // How many beads of a colour are in the saved charts (except one, usually the open chart).
@@ -195,7 +196,7 @@ export function countColorInSavedCharts(colorId, exceptId) {
 export function replaceColorInSavedCharts(oldId, newId, exceptId) {
   for (const chart of listSavedCharts()) {
     if (chart.id === exceptId || countIn(chart, oldId) === 0) continue;
-    chart.beads = chart.beads.map((row) => row.map((bead) => (bead === oldId ? newId : bead)));
+    replaceColorIn(chart, oldId, newId);
     chart.updatedAt = Date.now();
     saveChart(chart);
   }

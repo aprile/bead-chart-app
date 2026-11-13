@@ -14,10 +14,13 @@ import { getColor, isMissingColor } from './colors.js';
 const MIN_BEAD_PX = 14;
 const MAX_BEAD_PX = 48;
 
+// Empty beads are light grey, unless the chart has a background bead:
+// then they're drawn in that colour (they'll be stitched in it).
 const EMPTY_FILL = '#d6d4d9';
-// Grid lines (only for stitches without offsets): light grey, with every 10th line darker and thicker.
-const GRID_LINE = '#c2bec8';
+// Grid lines (only for stitches without offsets): every 10th row and column.
+// On a dark background bead they switch to a light grey so they stay visible.
 const GRID_LINE_10TH = '#8a8592';
+const GRID_LINE_10TH_ON_DARK = '#bcb8c4';
 // A colour that no longer exists: white with a red cross, easy to spot.
 const MISSING_FILL = '#ffffff';
 const MISSING_MARK = '#d32f2f';
@@ -73,6 +76,7 @@ export function makeLayout(chart, scale, { originX, originY, clipX, clipBottom, 
     clipX,
     clipBottom,
     numbers,
+    emptyFill: emptyFillOf(chart),
     gridLines: gridLines && stitch.gridLines, // lines between rows and columns, if the stitch has them
     gap: smaller < 6 ? 0 : Math.max(1, smaller * 0.08), // small gap between beads
     radius: smaller * 0.35, // rounded corners
@@ -85,8 +89,13 @@ export function makeLayout(chart, scale, { originX, originY, clipX, clipBottom, 
 
 // ---------- Drawing helpers ----------
 
-function fillFor(colorId) {
-  if (colorId === null) return EMPTY_FILL;
+// What colour empty beads are drawn in (see EMPTY_FILL).
+function emptyFillOf(chart) {
+  return (chart.backgroundBead && getColor(chart.backgroundBead)?.hex) || EMPTY_FILL;
+}
+
+function fillFor(colorId, emptyFill) {
+  if (colorId === null) return emptyFill;
   return getColor(colorId)?.hex ?? MISSING_FILL;
 }
 
@@ -124,8 +133,9 @@ function strokeMissingMarks(ctx, path) {
   ctx.stroke(path);
 }
 
-// Grid lines between the rows and columns in `range` (only for stitches without offsets).
-// Every 10th line, counted from the bottom left like the numbers, is darker.
+// Grid lines (only for stitches without offsets): just every 10th line,
+// counted from the bottom left like the numbers. The small gaps between the
+// beads already separate them, so lines between every bead looked too busy.
 // Positions are rounded to whole screen pixels so the lines stay crisp.
 function drawGridLines(ctx, layout, { firstRow, lastRow, firstCol, lastCol }) {
   const snap = (value) => Math.round(value * layout.ratio) / layout.ratio;
@@ -136,28 +146,31 @@ function drawGridLines(ctx, layout, { firstRow, lastRow, firstCol, lastCol }) {
   const right = originX + (lastCol + 1) * beadW;
   const isTenth = (n) => n > 0 && n % 10 === 0;
 
-  const normal = new Path2D();
-  const tenth = new Path2D();
+  const lines = new Path2D();
   for (let col = firstCol; col <= lastCol + 1; col++) {
     // the line on the left of column `col`, i.e. after `col` columns
-    const path = isTenth(col) ? tenth : normal;
+    if (!isTenth(col)) continue;
     const x = snap(originX + col * beadW);
-    path.moveTo(x, top);
-    path.lineTo(x, bottom);
+    lines.moveTo(x, top);
+    lines.lineTo(x, bottom);
   }
   for (let row = firstRow; row <= lastRow + 1; row++) {
     // the line above row `row`; counted from the bottom, it's after `rows - row` rows
-    const path = isTenth(rows - row) ? tenth : normal;
+    if (!isTenth(rows - row)) continue;
     const y = snap(originY + row * beadH);
-    path.moveTo(left, y);
-    path.lineTo(right, y);
+    lines.moveTo(left, y);
+    lines.lineTo(right, y);
   }
-  ctx.strokeStyle = GRID_LINE;
-  ctx.lineWidth = 1;
-  ctx.stroke(normal);
-  ctx.strokeStyle = GRID_LINE_10TH; // drawn last, so it sits on top where lines cross
-  ctx.lineWidth = 1.5;
-  ctx.stroke(tenth);
+  ctx.strokeStyle = isDark(layout.emptyFill) ? GRID_LINE_10TH_ON_DARK : GRID_LINE_10TH;
+  // A bit wider than the gap between beads, so the line shows on the beads' edges too.
+  ctx.lineWidth = Math.max(1.5, layout.gap + 1.5);
+  ctx.stroke(lines);
+}
+
+// Is a colour like "#1a1a1a" dark? (Its brightness, as the eye sees it, is under 40%.)
+function isDark(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  return 0.299 * r + 0.587 * g + 0.114 * b < 0.4;
 }
 
 // Where the chart area ends at the bottom (the numbers are below it).
@@ -219,7 +232,7 @@ export function drawChart(canvas, chart, layout, cssWidth, cssHeight) {
   for (let row = firstRow; row <= lastRow; row++) {
     for (let col = firstCol; col <= lastCol; col++) {
       const colorId = chart.beads[row][col];
-      const fill = fillFor(colorId);
+      const fill = fillFor(colorId, layout.emptyFill);
       if (!shapes.has(fill)) shapes.set(fill, new Path2D());
       addBeadShape(shapes.get(fill), layout, row, col);
       if (isMissingColor(colorId)) addMissingMark(missingMarks, layout, row, col);
@@ -301,7 +314,7 @@ export function drawBead(canvas, layout, row, col, colorId) {
 
   const shape = new Path2D();
   addBeadShape(shape, layout, row, col);
-  ctx.fillStyle = fillFor(colorId);
+  ctx.fillStyle = fillFor(colorId, layout.emptyFill);
   ctx.fill(shape);
   // Clearing the cell also wiped half of its grid lines: draw them again.
   if (layout.gridLines) drawGridLines(ctx, layout, { firstRow: row, lastRow: row, firstCol: col, lastCol: col });
@@ -359,13 +372,14 @@ export function drawPreview(canvas, chart, maxWidth, maxHeight, fillOf = null) {
   const ctx = canvas.getContext('2d');
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 
+  const emptyFill = emptyFillOf(chart);
   const shapes = new Map();
   chart.beads.forEach((beadRow, row) => {
     beadRow.forEach((colorId, col) => {
       let fill;
-      if (fillOf) fill = fillOf(colorId) ?? EMPTY_FILL;
+      if (fillOf) fill = fillOf(colorId) ?? emptyFill;
       // Missing colours show as solid red here: the preview is too small for an ×.
-      else fill = isMissingColor(colorId) ? MISSING_MARK : fillFor(colorId);
+      else fill = isMissingColor(colorId) ? MISSING_MARK : fillFor(colorId, emptyFill);
       if (!shapes.has(fill)) shapes.set(fill, new Path2D());
       const { x, y } = cellPosition(layout, row, col);
       shapes.get(fill).rect(x, y, layout.beadW, layout.beadH);
