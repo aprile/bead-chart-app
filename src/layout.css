@@ -194,6 +194,29 @@
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
 }
 
+/* "Drag the pasted beads into place  Cancel  Done", floating at the top of the canvas */
+.paste-bar {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: calc(100% - 2rem);
+  padding: 0.25rem 0.25rem 0.25rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--background);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+  font-size: 0.875rem;
+}
+
+.paste-bar[hidden] {
+  display: none;
+}
+
 .zoom-percent {
   min-width: 3.25em;
   text-align: center;

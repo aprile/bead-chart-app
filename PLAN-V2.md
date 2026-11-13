@@ -170,7 +170,7 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
 - With a selection: **copy**, **paste**, **fill** (with the brush colour) and **erase**.
 - **Paste** puts the copied beads over the chart as a floating piece. Drag it into place, then drop it (Enter, click outside or a Done button). Esc cancels.
 - **Empty beads in the copy are see-through:** they leave the beads underneath alone.
-- **Snap to keep the shape:** on stitches with offsets the piece only moves in steps that keep the same offsets (every 2nd row on brick, 4th row on two-drop brick, 2nd column on peyote). The step comes from the stitch module.
+- **Snap to keep the shape:** on stitches with offsets the piece only moves in steps that keep the same offsets (every 2nd row on brick, 4th row on two-drop brick, 2nd column on peyote). Worked out by comparing the stitch module's `cellOffset` at the old and new position. A piece copied from a different stitch, whose shape can't be kept, moves freely.
 - Each paste, fill or erase is one undo step.
 
 ## Data changes (version 2)
@@ -217,7 +217,7 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
   - Step 2a: Tailwind's preflight is on. The v1 CSS (`style.css`) is in a `v1` layer below Basecoat, and only applies inside `class="v1"` (its colours are `--v1-*`, its badge is `.v1-badge`). Screens drop `v1` as they're rebuilt.
   - Step 2b: canvas-first layout (desktop). Top bar (panel toggles, chart name, New chart, screen links), left Tools panel (brush/eraser, undo/redo/clear, import photo), canvas filling the middle with floating zoom controls, right panel with Palette / Chart tabs. Panels can be hidden (remembered). Other screens still v1, in a scrolling area. Styles in `src/layout.css` (layer `app`).
   - Added (from the layout sketch, agreed 2026-11-12): **fill** and **picker** tools. Fill paints the joined beads of one colour (one undo step); "joined" = cells sharing an edge, worked out from each stitch module's `cellOffset` (`neighbours()` in `src/stitches/index.js`). Picker chooses a bead's colour in the palette (empty bead → eraser).
-  - Added 2026-11-13 (asked for before polish): grid lines show only every 10th line ("Lines every 10 beads"); **background bead** per chart (section 6, pulled forward from milestone 5); **marquee selection** step 1 done (Select tool; copy, fill, erase, deselect; outline follows the beads; `src/selection.js`, `src/selection-controls.js`). Next: step 2, paste as a floating piece.
+  - Added 2026-11-13 (asked for before polish): grid lines show only every 10th line ("Lines every 10 beads"); **background bead** per chart (section 6, pulled forward from milestone 5); **marquee selection** done (Select tool; copy, paste, fill, erase, deselect; outline follows the beads; `src/selection.js`, `src/selection-controls.js`). Paste floats with a Cancel/Done bar; ⌘Z while pasting cancels the paste; the copy stays when you open another chart. Snapping is worked out from each stitch's `cellOffset` (no separate setting in the modules).
   - Then: 3 chart switcher, 4 stash + photo import as dialogs.
 
 ## Open questions

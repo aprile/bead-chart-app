@@ -73,6 +73,9 @@
               <button type="button" id="selection-copy" class="btn" data-variant="ghost" title="Copy (⌘C)">
                 <i data-lucide="copy"></i> Copy
               </button>
+              <button type="button" id="selection-paste" class="btn" data-variant="ghost" title="Paste (⌘V)">
+                <i data-lucide="clipboard-paste"></i> Paste
+              </button>
               <button type="button" id="selection-fill" class="btn" data-variant="ghost" title="Fill with the brush colour">
                 <i data-lucide="paint-bucket"></i> Fill
               </button>
@@ -113,6 +116,12 @@
         </aside>
 
         <main class="canvas-area">
+          <!-- Shown while a pasted piece is floating over the chart -->
+          <div id="paste-bar" class="paste-bar" hidden>
+            <span>Drag the pasted beads into place</span>
+            <button type="button" class="btn" data-variant="ghost" data-size="sm" data-action="cancel">Cancel</button>
+            <button type="button" class="btn" data-size="sm" data-action="done">Done</button>
+          </div>
           <div id="missing-note" class="alert missing-note" data-variant="destructive" hidden>
             <i data-lucide="triangle-alert"></i>
             <section id="missing-text"></section>

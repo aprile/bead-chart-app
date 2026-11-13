@@ -11,10 +11,12 @@ import { beadAtPoint, drawBead } from './grid.js';
 // onStrokeEnd() → called when a drag finishes (to update the undo buttons)
 // getTool()    → 'brush', 'eraser', 'fill', 'picker' or 'select'
 // onBeadClick(tool, { row, col }) → a click with fill or the picker
-// onSelectDrag(phase, { row, col } or null) → a drag with select;
+// isPasting()  → true while a pasted piece floats over the chart: then any
+//                drag goes to onSelectDrag (to move the piece), whatever the tool
+// onSelectDrag(phase, { row, col } or null) → a drag with select (or while pasting);
 //                phase is 'start', 'move' or 'end'. The bead is null when
 //                the pointer isn't over one (e.g. off the edge of the chart).
-export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getTool, onBeadClick, onSelectDrag }) {
+export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getTool, onBeadClick, isPasting, onSelectDrag }) {
   let lastPoint = null; // where the pointer was last time, while dragging
   let selecting = false; // dragging out a selection
 
@@ -52,7 +54,7 @@ export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getT
 
   canvas.addEventListener('pointerdown', (event) => {
     if (event.button !== 0 || !getChart()) return; // left button only
-    const tool = getTool();
+    const tool = isPasting() ? 'select' : getTool();
     if (tool === 'fill' || tool === 'picker') {
       const { x, y } = pointFrom(event);
       const hit = beadAtPoint(getLayout(), x, y);

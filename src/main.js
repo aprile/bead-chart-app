@@ -118,6 +118,7 @@ const palette = setupPalette(document.querySelector('#palette'), {
 
 // Select tool + the Selection buttons (copy, fill, erase, deselect).
 const selection = setupSelection(document.querySelector('#left-panel'), {
+  pasteBar: document.querySelector('#paste-bar'),
   chartView,
   getBrushColorId: () => palette.getSelectedColorId(),
   isActive: () => views?.isShowing('chart'),
@@ -136,6 +137,7 @@ setupPainting(canvas, {
     if (tool === 'fill') fillFrom(row, col);
     else pickFrom(row, col);
   },
+  isPasting: () => selection.isPasting(),
   onSelectDrag: (phase, bead) => selection.onDrag(phase, bead),
   onStrokeEnd() {
     chartView.repaint(); // painting redraws single beads, which can cover the selection outline
@@ -215,6 +217,7 @@ nameInput.addEventListener('change', () => {
 
 // Undo/redo can change the size too, so the form is updated to match.
 function undo() {
+  if (selection.cancelPaste()) return; // while pasting, undo just cancels the paste
   if (chart.undo()) {
     panel.showChart(chart.getChart());
     redraw();
@@ -222,6 +225,7 @@ function undo() {
 }
 
 function redo() {
+  selection.cancelPaste();
   if (chart.redo()) {
     panel.showChart(chart.getChart());
     redraw();
@@ -232,6 +236,7 @@ undoButton.addEventListener('click', undo);
 redoButton.addEventListener('click', redo);
 
 clearButton.addEventListener('click', () => {
+  selection.cancelPaste();
   if (chart.isEmpty()) return;
   if (confirm('Clear all beads from the chart? (You can undo this.)')) {
     chart.clearChart();
@@ -244,6 +249,7 @@ setupPhotoImport({
   fileInput: document.querySelector('#photo-file'),
   getChart: chart.getChart,
   onApply(beads) {
+    selection.cancelPaste();
     chart.setAllBeads(beads);
     redraw();
   },

@@ -399,8 +399,8 @@ const SELECTION_HALO = '#ffffff'; // a white edge outside the blue, so it shows 
 
 // Draws a selection (from selection.js) over the chart: a tint on the beads
 // and an outline around the outside. The outline follows the beads, so on
-// brick or peyote it's stepped.
-export function drawSelection(canvas, layout, rect) {
+// brick or peyote it's stepped. With tint: false, only the outline is drawn.
+export function drawSelection(canvas, layout, rect, { tint = true } = {}) {
   // One rectangle per selected bead's cell.
   const cells = new Path2D();
   for (let row = rect.top; row <= rect.bottom; row++) {
@@ -431,9 +431,37 @@ export function drawSelection(canvas, layout, rect) {
   ctx.save();
   ctx.setTransform(layout.ratio, 0, 0, layout.ratio, 0, 0);
   clipToChartArea(ctx, layout);
-  ctx.fillStyle = SELECTION_TINT;
-  ctx.fill(cells);
+  if (tint) {
+    ctx.fillStyle = SELECTION_TINT;
+    ctx.fill(cells);
+  }
   ctx.setTransform(1, 0, 0, 1, 0, 0); // the scratch canvas is already in real pixels
   ctx.drawImage(scratch, 0, 0);
+  ctx.restore();
+}
+
+// Draws a pasted piece floating over the chart, with its top-left bead at
+// (at.row, at.col). piece = { rows, cols, beads }. Empty beads in the piece
+// are see-through, and beads that hang off the chart aren't drawn.
+export function drawPiece(canvas, layout, piece, at) {
+  const shapes = new Map(); // fill colour → Path2D
+  piece.beads.forEach((beadRow, r) => {
+    beadRow.forEach((colorId, c) => {
+      const row = at.row + r;
+      const col = at.col + c;
+      if (colorId === null || row < 0 || row >= layout.rows || col < 0 || col >= layout.cols) return;
+      const fill = fillFor(colorId, layout.emptyFill);
+      if (!shapes.has(fill)) shapes.set(fill, new Path2D());
+      addBeadShape(shapes.get(fill), layout, row, col);
+    });
+  });
+  const ctx = canvas.getContext('2d');
+  ctx.save();
+  ctx.setTransform(layout.ratio, 0, 0, layout.ratio, 0, 0);
+  clipToChartArea(ctx, layout);
+  for (const [fill, shape] of shapes) {
+    ctx.fillStyle = fill;
+    ctx.fill(shape);
+  }
   ctx.restore();
 }
