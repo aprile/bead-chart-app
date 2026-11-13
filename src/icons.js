@@ -7,13 +7,13 @@
 
 import {
   createIcons,
-  Eraser, FilePlus, FolderOpen, ImagePlus, Minus, PaintBucket, Paintbrush, Palette, PanelLeft,
-  PanelRight, Pipette, Plus, Redo2, Scan, Settings, Trash2, TriangleAlert, Undo2,
+  Copy, Eraser, FilePlus, FolderOpen, ImagePlus, Minus, PaintBucket, Paintbrush, Palette, PanelLeft,
+  PanelRight, Pipette, Plus, Redo2, Scan, Settings, SquareDashed, Trash2, TriangleAlert, Undo2, X,
 } from 'lucide';
 
 const icons = {
-  Eraser, FilePlus, FolderOpen, ImagePlus, Minus, PaintBucket, Paintbrush, Palette, PanelLeft,
-  PanelRight, Pipette, Plus, Redo2, Scan, Settings, Trash2, TriangleAlert, Undo2,
+  Copy, Eraser, FilePlus, FolderOpen, ImagePlus, Minus, PaintBucket, Paintbrush, Palette, PanelLeft,
+  PanelRight, Pipette, Plus, Redo2, Scan, Settings, SquareDashed, Trash2, TriangleAlert, Undo2, X,
 };
 
 export function showIcons() {

@@ -390,3 +390,50 @@ export function drawPreview(canvas, chart, maxWidth, maxHeight, fillOf = null) {
     ctx.fill(shape);
   }
 }
+
+// ---------- Selection outline ----------
+
+const SELECTION_TINT = 'rgba(37, 99, 235, 0.18)'; // see-through blue over the selected beads
+const SELECTION_LINE = '#2563eb';
+const SELECTION_HALO = '#ffffff'; // a white edge outside the blue, so it shows on dark beads
+
+// Draws a selection (from selection.js) over the chart: a tint on the beads
+// and an outline around the outside. The outline follows the beads, so on
+// brick or peyote it's stepped.
+export function drawSelection(canvas, layout, rect) {
+  // One rectangle per selected bead's cell.
+  const cells = new Path2D();
+  for (let row = rect.top; row <= rect.bottom; row++) {
+    for (let col = rect.left; col <= rect.right; col++) {
+      const cell = cellPosition(layout, row, col);
+      cells.rect(layout.originX + cell.x, layout.originY + cell.y, layout.beadW, layout.beadH);
+    }
+  }
+
+  // The outline: stroke every cell with a wide line on a scratch canvas, then
+  // rub out everything inside the cells. Only the outside edge is left.
+  const scratch = document.createElement('canvas');
+  scratch.width = canvas.width;
+  scratch.height = canvas.height;
+  const sctx = scratch.getContext('2d');
+  sctx.setTransform(layout.ratio, 0, 0, layout.ratio, 0, 0);
+  sctx.lineJoin = 'round';
+  sctx.strokeStyle = SELECTION_HALO;
+  sctx.lineWidth = 7;
+  sctx.stroke(cells);
+  sctx.strokeStyle = SELECTION_LINE;
+  sctx.lineWidth = 4;
+  sctx.stroke(cells);
+  sctx.globalCompositeOperation = 'destination-out';
+  sctx.fill(cells);
+
+  const ctx = canvas.getContext('2d');
+  ctx.save();
+  ctx.setTransform(layout.ratio, 0, 0, layout.ratio, 0, 0);
+  clipToChartArea(ctx, layout);
+  ctx.fillStyle = SELECTION_TINT;
+  ctx.fill(cells);
+  ctx.setTransform(1, 0, 0, 1, 0, 0); // the scratch canvas is already in real pixels
+  ctx.drawImage(scratch, 0, 0);
+  ctx.restore();
+}

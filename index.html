@@ -54,12 +54,36 @@
                 title="Click a bead to use its colour">
                 <i data-lucide="pipette"></i> Picker
               </button>
+              <button type="button" class="btn tool" data-variant="ghost" data-tool="select" aria-pressed="false"
+                title="Drag to select a rectangle of beads">
+                <i data-lucide="square-dashed"></i> Select
+              </button>
             </div>
             <!-- The brush colour (chosen in the palette) -->
             <p class="current-color">
               <span id="current-swatch" class="current-swatch"></span>
               <span id="current-color-name"></span>
             </p>
+          </section>
+
+          <!-- What to do with the selected beads (Select tool) -->
+          <section>
+            <h2 class="panel-heading">Selection</h2>
+            <div class="panel-buttons">
+              <button type="button" id="selection-copy" class="btn" data-variant="ghost" title="Copy (⌘C)">
+                <i data-lucide="copy"></i> Copy
+              </button>
+              <button type="button" id="selection-fill" class="btn" data-variant="ghost" title="Fill with the brush colour">
+                <i data-lucide="paint-bucket"></i> Fill
+              </button>
+              <button type="button" id="selection-erase" class="btn" data-variant="ghost" title="Erase (Delete)">
+                <i data-lucide="eraser"></i> Erase
+              </button>
+              <button type="button" id="selection-clear" class="btn" data-variant="ghost" title="Deselect (Esc)">
+                <i data-lucide="x"></i> Deselect
+              </button>
+            </div>
+            <p id="selection-status" class="panel-hint selection-status"></p>
           </section>
 
           <section>

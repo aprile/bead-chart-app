@@ -321,6 +321,11 @@
   color: var(--muted-foreground);
 }
 
+/* "4 × 3 beads selected", under the Selection buttons */
+.selection-status {
+  padding: 0 0.625rem;
+}
+
 /* A switch that can't be used right now (e.g. grid lines on a brick chart) */
 .view-options label:has(input:disabled) {
   color: var(--muted-foreground);

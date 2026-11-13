@@ -1,5 +1,6 @@
 // Mouse/touch on the canvas. With the brush or eraser: click one bead, or
 // drag across many. With fill or the picker: one click, handled by main.js.
+// With select: dragging draws out a selection, also handled by main.js.
 
 import { beginStroke, paintBead, endStroke, getChart } from './chart.js';
 import { beadAtPoint, drawBead } from './grid.js';
@@ -8,10 +9,14 @@ import { beadAtPoint, drawBead } from './grid.js';
 // getColorId() → the colour id to paint, null for the eraser, or undefined
 //                for "nothing to paint with" (the brush with no colour chosen)
 // onStrokeEnd() → called when a drag finishes (to update the undo buttons)
-// getTool()    → 'brush', 'eraser', 'fill' or 'picker'
+// getTool()    → 'brush', 'eraser', 'fill', 'picker' or 'select'
 // onBeadClick(tool, { row, col }) → a click with fill or the picker
-export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getTool, onBeadClick }) {
+// onSelectDrag(phase, { row, col } or null) → a drag with select;
+//                phase is 'start', 'move' or 'end'. The bead is null when
+//                the pointer isn't over one (e.g. off the edge of the chart).
+export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getTool, onBeadClick, onSelectDrag }) {
   let lastPoint = null; // where the pointer was last time, while dragging
+  let selecting = false; // dragging out a selection
 
   // Pointer position in CSS pixels, relative to the canvas's top left.
   function pointFrom(event) {
@@ -56,12 +61,26 @@ export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getT
     }
     // "Capture" keeps sending us moves even if the pointer leaves the canvas.
     canvas.setPointerCapture(event.pointerId);
+    if (tool === 'select') {
+      selecting = true;
+      onSelectDrag('start', beadUnder(event));
+      return;
+    }
     beginStroke();
     lastPoint = pointFrom(event);
     paintAt(lastPoint);
   });
 
+  function beadUnder(event) {
+    const { x, y } = pointFrom(event);
+    return beadAtPoint(getLayout(), x, y);
+  }
+
   canvas.addEventListener('pointermove', (event) => {
+    if (selecting) {
+      onSelectDrag('move', beadUnder(event));
+      return;
+    }
     if (!lastPoint) return; // not dragging
     const point = pointFrom(event);
     paintLine(lastPoint, point);
@@ -69,6 +88,11 @@ export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getT
   });
 
   function finish() {
+    if (selecting) {
+      selecting = false;
+      onSelectDrag('end', null);
+      return;
+    }
     if (!lastPoint) return;
     lastPoint = null;
     endStroke();

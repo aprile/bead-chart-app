@@ -37,6 +37,7 @@ export function setupChartView(elements) {
   let scale = 1; // pixels per mm right now
   let content = { width: 0, height: 0 };
   let layout = null;
+  let overlay = null; // see setOverlay() below
 
   function saveView() {
     save(STORAGE_KEYS.view, view);
@@ -100,6 +101,7 @@ export function setupChartView(elements) {
     const width = Math.min(viewport.clientWidth, content.width);
     const height = Math.min(viewport.clientHeight, content.height);
     drawChart(canvas, chart, layout, width, height);
+    overlay?.(canvas, layout); // e.g. the selection outline, on top of the beads
   }
 
   function updateControls() {
@@ -190,6 +192,12 @@ export function setupChartView(elements) {
 
   return {
     render,
+    // Redraw without re-measuring (e.g. while dragging out a selection).
+    repaint: paint,
+    // fn(canvas, layout) draws extra things on top of the chart after every redraw.
+    setOverlay(fn) {
+      overlay = fn;
+    },
     getLayout: () => layout,
     scrollToStart() {
       viewport.scrollTo(0, 0);

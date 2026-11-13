@@ -10,6 +10,7 @@ import { joinedArea } from './fill.js';
 import { setupNewChartPanel } from './new-chart-panel.js';
 import { setupPalette } from './palette.js';
 import { setupBackgroundBead } from './background-bead.js';
+import { setupSelection } from './selection-controls.js';
 import { setupPainting } from './painting.js';
 import { setupStashScreen } from './stash-screen.js';
 import { setupChartsScreen } from './charts-screen.js';
@@ -59,6 +60,7 @@ function redraw() {
   // Switching to the chart view calls redraw() again.
   if (!views || !views.isShowing('chart')) return;
   const current = chart.getChart();
+  selection.fitTo(current); // undo or a resize may have made the chart smaller
   chartView.render(current);
   palette.show(current.beadSize); // the bead size or stash may have changed
   backgroundBead.show(current);
@@ -107,7 +109,19 @@ const palette = setupPalette(document.querySelector('#palette'), {
     tools.showColor(colorId);
     if (chart.getChart()) backgroundBead.show(chart.getChart()); // "Use brush colour" depends on the brush colour
   },
-  onPick: () => tools.setTool('brush'), // clicking a colour switches back to the brush
+  // Clicking a colour switches from the eraser or picker back to the brush.
+  // Fill and Select use the colour too, so they stay.
+  onPick() {
+    if (['eraser', 'picker'].includes(tools.getTool())) tools.setTool('brush');
+  },
+});
+
+// Select tool + the Selection buttons (copy, fill, erase, deselect).
+const selection = setupSelection(document.querySelector('#left-panel'), {
+  chartView,
+  getBrushColorId: () => palette.getSelectedColorId(),
+  isActive: () => views?.isShowing('chart'),
+  afterChange: () => redraw(),
 });
 
 setupPainting(canvas, {
@@ -122,7 +136,9 @@ setupPainting(canvas, {
     if (tool === 'fill') fillFrom(row, col);
     else pickFrom(row, col);
   },
+  onSelectDrag: (phase, bead) => selection.onDrag(phase, bead),
   onStrokeEnd() {
+    chartView.repaint(); // painting redraws single beads, which can cover the selection outline
     updateButtons();
     updateMissingNote(); // painting over a missing bead fixes it
   },
@@ -156,6 +172,7 @@ function pickFrom(row, col) {
 
 // Show the open chart in the form, the name box and the grid.
 function showOpenChart() {
+  selection.clear();
   const current = chart.getChart();
   panel.showChart(current);
   nameInput.value = current.name;
