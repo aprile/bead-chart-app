@@ -54,26 +54,47 @@ export function copyBeads(chart, rect) {
 // only allow positions where the shifts are the same. The shifts come from the
 // stitch module (cellOffset), so this works for every stitch.
 
-// The shifts of a piece placed at (top, left): one for each row (down its first
-// column) and one for each column (along its first row), compared to the
-// top-left bead. Beads outside the chart are null (not checked).
+// The shifts of a piece placed at (top, left): one for each of its rows and
+// one for each of its columns. Rows are measured down one column, and columns
+// along one row, both inside the chart (beads off the chart have no shift:
+// null). In every stitch the shift depends only on the row or the column, so
+// any row or column inside the chart will do.
 export function shapeAt(stitch, chart, top, left, rows, cols) {
-  const base = stitch.cellOffset(top, left, chart);
   const inChart = (row, col) => row >= 0 && row < chart.rows && col >= 0 && col < chart.cols;
-  const shift = (row, col) => {
-    if (!inChart(row, col)) return null;
-    const offset = stitch.cellOffset(row, col, chart);
-    return `${offset.x - base.x},${offset.y - base.y}`;
+  const shift = (row, col) => (inChart(row, col) ? stitch.cellOffset(row, col, chart) : null);
+  const firstInside = (start, length, size) => {
+    const index = Math.max(start, 0);
+    return index < Math.min(start + length, size) ? index : null;
   };
+  const measureCol = firstInside(left, cols, chart.cols);
+  const measureRow = firstInside(top, rows, chart.rows);
   return {
-    down: Array.from({ length: rows }, (_, r) => shift(top + r, left)),
-    across: Array.from({ length: cols }, (_, c) => shift(top, left + c)),
+    down: Array.from({ length: rows }, (_, r) => (measureCol === null ? null : shift(top + r, measureCol))),
+    across: Array.from({ length: cols }, (_, c) => (measureRow === null ? null : shift(measureRow, left + c))),
   };
 }
 
+// Do two lists of shifts have the same pattern? The whole piece may be moved
+// by the same amount (that doesn't change its shape), so we compare the
+// differences, skipping beads off the chart.
+function samePattern(a, b) {
+  let delta = null;
+  for (let i = 0; i < a.length; i++) {
+    if (!a[i] || !b[i]) continue;
+    const d = { x: b[i].x - a[i].x, y: b[i].y - a[i].y };
+    if (!delta) delta = d;
+    else if (Math.abs(d.x - delta.x) > 1e-9 || Math.abs(d.y - delta.y) > 1e-9) return false;
+  }
+  return true;
+}
+
 function sameShape(a, b) {
-  const same = (x, y) => x.every((value, i) => value === null || y[i] === null || value === y[i]);
-  return same(a.down, b.down) && same(a.across, b.across);
+  return samePattern(a.down, b.down) && samePattern(a.across, b.across);
+}
+
+// Does the piece keep its shape with its top-left bead at `at`?
+export function keepsShape(stitch, chart, piece, at) {
+  return sameShape(piece.shape, shapeAt(stitch, chart, at.row, at.col, piece.rows, piece.cols));
 }
 
 // The allowed position nearest to `wanted` ({ row, col }) for a piece with
@@ -87,9 +108,8 @@ export function snapPosition(stitch, chart, piece, wanted) {
   }
   tries.sort((a, b) => a.distance - b.distance);
   for (const { dr, dc } of tries) {
-    const row = wanted.row + dr;
-    const col = wanted.col + dc;
-    if (sameShape(piece.shape, shapeAt(stitch, chart, row, col, piece.rows, piece.cols))) return { row, col };
+    const at = { row: wanted.row + dr, col: wanted.col + dc };
+    if (keepsShape(stitch, chart, piece, at)) return at;
   }
   return wanted;
 }

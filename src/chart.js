@@ -10,6 +10,8 @@
 
 import { CHART_VERSION } from './migrate.js';
 import { countBeadsOf, replaceColorIn } from './chart-colors.js';
+import { getStitch } from './stitches/index.js';
+import { shapeAt, keepsShape } from './selection.js';
 
 export const DEFAULT_NAME = 'Untitled chart';
 
@@ -137,12 +139,54 @@ export function resizeChart(settings) {
     saveUndoStep(resizeBase);
   }
   const base = resizeBase;
-  // Keep beads that still fit, anchored at the top left.
+  // Keep the beads that still fit, anchored at the BOTTOM LEFT (row 1,
+  // column 1), where the work starts. Rows and columns are added or cut at
+  // the top and right.
+  const at = resizedPosition(base, settings);
   const beads = emptyBeads(settings.cols, settings.rows).map((row, r) =>
-    row.map((_, c) => base.beads[r]?.[c] ?? null),
+    row.map((_, c) => base.beads[r - at.row]?.[c - at.col] ?? null),
   );
   chart = { ...base, ...settings, name: chart.name, beads };
   notify();
+}
+
+// Where the old beads go in the resized chart: the row and column (in the new
+// chart) of the old top-left bead. Normally that keeps the bottom-left corner
+// in place. But on stitches with half-bead offsets (e.g. brick, where the
+// shift depends on the number of rows), that could change the design's shape.
+// Then we move it by a row or column (up to 3 for two-drop brick) to where the
+// shape stays the same (the same check as pasting, see selection.js),
+// choosing the move that cuts off the fewest painted beads, then the smallest move.
+function resizedPosition(base, settings) {
+  const bottomLeft = { row: settings.rows - base.rows, col: 0 };
+  const stitch = getStitch(settings.stitch);
+  if (stitch !== getStitch(base.stitch)) return bottomLeft; // a different stitch can't keep the shape anyway
+  const piece = { rows: base.rows, cols: base.cols, shape: shapeAt(stitch, base, 0, 0, base.rows, base.cols) };
+
+  // How many painted beads would end up off the new chart.
+  const countIn = paintedCounter(base.beads);
+  const total = countIn(0, 0, base.rows, base.cols);
+  const cut = ({ row, col }) => {
+    // the old rows and columns that still fit
+    const top = Math.max(-row, 0);
+    const bottom = Math.min(settings.rows - row, base.rows);
+    const left = Math.max(-col, 0);
+    const right = Math.min(settings.cols - col, base.cols);
+    return total - (bottom > top && right > left ? countIn(top, left, bottom, right) : 0);
+  };
+
+  let best = null;
+  for (let dr = -3; dr <= 3; dr++) {
+    for (let dc = -3; dc <= 3; dc++) {
+      const at = { row: bottomLeft.row + dr, col: bottomLeft.col + dc };
+      if (!keepsShape(stitch, settings, piece, at)) continue;
+      const score = [cut(at), Math.hypot(dr, dc)];
+      if (!best || score[0] < best.score[0] || (score[0] === best.score[0] && score[1] < best.score[1])) {
+        best = { at, score };
+      }
+    }
+  }
+  return best ? best.at : bottomLeft;
 }
 
 export function endResize() {
@@ -151,6 +195,22 @@ export function endResize() {
     undoStack.pop();
   }
   resizeBase = null;
+}
+
+// Returns countIn(top, left, bottom, right): how many beads are painted in
+// rows top…bottom−1 and columns left…right−1. It adds up the whole chart once
+// (a "running total" table), so each count afterwards is instant.
+function paintedCounter(beads) {
+  const rows = beads.length;
+  const cols = beads[0]?.length ?? 0;
+  // sums[r][c] = painted beads above row r and left of column c
+  const sums = Array.from({ length: rows + 1 }, () => new Array(cols + 1).fill(0));
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      sums[r + 1][c + 1] = sums[r][c + 1] + sums[r + 1][c] - sums[r][c] + (beads[r][c] === null ? 0 : 1);
+    }
+  }
+  return (top, left, bottom, right) => sums[bottom][right] - sums[top][right] - sums[bottom][left] + sums[top][left];
 }
 
 // ---- Colours used in the chart ----

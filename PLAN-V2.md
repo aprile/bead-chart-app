@@ -223,6 +223,7 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
   - Step 4b done: **Photo to chart** and **Pick colour from photo** are Basecoat dialogs (sliders use Basecoat's `range` script; full screen on a phone). No v1 dialogs are left; only the My charts and Calibration pages still use the v1 styles.
   - **Milestone 3 done** (desktop).
   - Added 2026-11-13 (asked for before milestone 4): **turn sideways** button in the zoom controls. View only: the chart is drawn a quarter turn clockwise (row 1 on the left, rows running left to right, column 1 at the top); the beads, stitch and export don't change. Remembered per chart (`view.sideways` in the view settings). `grid.js` draws in chart space and turns it with one canvas transform; pointer positions are turned back, so painting, fill, selection and paste work unchanged. Numbers stay upright.
+  - Fixed 2026-11-13: **resizing keeps the bottom-left corner** (row 1, column 1) instead of the top left, since work starts there. Rows and columns are added or cut at the top and right. On stitches with offsets, if keeping the corner would change the design's shape (brick with an odd change in rows, peyote with an odd change in columns), the design moves by one row/column to the nearest position that keeps the shape and cuts the fewest painted beads (`resizedPosition` in `chart.js`, using the paste shape check). Also fixed the shape check for pieces hanging off the chart's edge.
   - Next: milestone 4, phone/tablet layout.
 
 ## Open questions
