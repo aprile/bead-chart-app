@@ -220,7 +220,8 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
   - Added 2026-11-13 (asked for before polish): grid lines show only every 10th line ("Lines every 10 beads"); **background bead** per chart (section 6, pulled forward from milestone 5); **marquee selection** done (Select tool; copy, paste, fill, erase, deselect; outline follows the beads; `src/selection.js`, `src/selection-controls.js`). Paste floats with a Cancel/Done bar; ⌘Z while pasting cancels the paste; the copy stays when you open another chart. Snapping is worked out from each stitch's `cellOffset` (no separate setting in the modules).
   - Step 3 done: **chart switcher**. The name box stays (type to rename); a ▾ menu next to it (Basecoat dropdown) lists the 8 most recent charts (✓ on the open one) plus New chart, Rename, Duplicate, Delete…, All charts… (`src/chart-menu.js`). The separate New chart button is gone.
   - Step 4a done: **My stash is a Basecoat dialog** over the chart (Stash in the top bar, Edit my stash in the palette; full screen on a phone), and the add/edit/delete colour forms are Basecoat dialogs. `#stash` is no longer a view. Old stash/form styles removed from `style.css`; new ones in `layout.css`.
-  - Next: 4b photo import + pick colour from photo as Basecoat dialogs.
+  - Step 4b done: **Photo to chart** and **Pick colour from photo** are Basecoat dialogs (sliders use Basecoat's `range` script; full screen on a phone). No v1 dialogs are left; only the My charts and Calibration pages still use the v1 styles.
+  - **Milestone 3 done** (desktop). Next: milestone 4, phone/tablet layout.
 
 ## Open questions
 - **Peyote even/odd count:** is it just whether the column count is even or odd? If so, work it out from `cols` instead of a separate `peyoteCount` setting. Needed by milestone 8 (working mode).

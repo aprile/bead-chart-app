@@ -252,6 +252,9 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     for (const name of ['brightness', 'contrast', 'saturation']) {
       fields[name].value = 0;
       fields[`${name}Value`].value = 0;
+      // Tell Basecoat the slider moved, so the filled part of its track follows.
+      // (Not "bubbling", so the form's own input listener above doesn't run too.)
+      fields[name].dispatchEvent(new Event('input'));
     }
     scheduleUpdate(false);
   });
@@ -278,9 +281,9 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
                 ${escapeHtml(colorLabel(color))}
                 <small class="bead-count"></small>
               </span>
-              <button type="button" class="lock" data-action="lock" aria-pressed="${isLocked}"
+              <button type="button" class="btn lock" data-variant="outline" data-size="xs" data-action="lock" aria-pressed="${isLocked}"
                 title="Locked colours are always used">${isLocked ? 'Locked' : 'Lock'}</button>
-              <select data-action="swap" aria-label="Swap ${escapeHtml(colorLabel(color))} for another colour">
+              <select class="select" data-action="swap" aria-label="Swap ${escapeHtml(colorLabel(color))} for another colour">
                 <option value="">Swap…</option>${options}
               </select>
             </li>`;
@@ -388,7 +391,10 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     onApply(beads);
     dialog.close();
   });
-  dialog.querySelector('[data-action="cancel"]').addEventListener('click', () => dialog.close());
+  // Cancel and the × in the corner.
+  for (const button of dialog.querySelectorAll('[data-action="cancel"]')) {
+    button.addEventListener('click', () => dialog.close());
+  }
   controls.addEventListener('submit', (event) => event.preventDefault());
 
   // Keep the box in place if the window is resized while the dialog is open.

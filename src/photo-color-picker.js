@@ -200,7 +200,10 @@ export function setupPhotoColorPicker() {
     onPick(picked);
     dialog.close();
   });
-  dialog.querySelector('[data-action="cancel"]').addEventListener('click', () => dialog.close());
+  // Cancel and the × in the corner.
+  for (const button of dialog.querySelectorAll('[data-action="cancel"]')) {
+    button.addEventListener('click', () => dialog.close());
+  }
 
   return { open };
 }

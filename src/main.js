@@ -3,6 +3,7 @@ import './app.css';
 import 'basecoat-css/basecoat';
 import 'basecoat-css/tabs';
 import 'basecoat-css/dropdown-menu';
+import 'basecoat-css/range'; // fills the slider track up to the thumb
 import { setupDarkMode } from './dark-mode.js';
 import { showIcons } from './icons.js';
 import { setupPanels } from './panels.js';

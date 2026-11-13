@@ -319,17 +319,19 @@
       </div>
     </div>
 
-    <!-- Pop-ups (still the v1 design) -->
-    <div class="v1">
-      <!-- Photo to chart (src/photo.js) -->
-      <dialog id="photo-dialog" class="photo-dialog">
-        <h3>Photo to chart</h3>
-        <p class="note">
-          Drag the box to move it, or drag a corner to resize it. It has the same shape as
-          your chart (<span class="photo-shape"></span>). Apply replaces all the beads in the
-          chart, and you can undo it.
-        </p>
-        <div class="photo-panes">
+    <!-- Photo to chart (src/photo.js) -->
+    <dialog id="photo-dialog" class="dialog photo-dialog" aria-labelledby="photo-title">
+      <div>
+        <header>
+          <h2 id="photo-title">Photo to chart</h2>
+          <p>
+            Drag the box to move it, or drag a corner to resize it. It has the same shape as
+            your chart (<span class="photo-shape"></span>). Apply replaces all the beads in the
+            chart, and you can undo it.
+          </p>
+        </header>
+
+        <section class="photo-panes">
           <div class="photo-stage">
             <!-- the photo (a canvas) is put here by photo.js -->
             <div class="crop-box">
@@ -341,99 +343,121 @@
           </div>
           <div class="photo-result">
             <canvas class="photo-preview"></canvas>
-            <p class="note photo-summary"></p>
-            <label class="toggle">
-              <input type="checkbox" name="showSampled" form="photo-controls" />
+            <p class="photo-summary"></p>
+            <label class="label photo-switch">
+              <input type="checkbox" role="switch" class="input" name="showSampled" form="photo-controls" />
               Show sampled colours (before matching to my stash)
             </label>
           </div>
 
           <!-- All the settings. Any change updates the preview. -->
           <form id="photo-controls" class="photo-controls">
-            <fieldset>
+            <fieldset class="photo-group">
               <legend>Colours</legend>
-              <label class="slider">
-                <span>Max colours <output name="capValue">6</output></span>
-                <input type="range" name="cap" min="2" max="20" value="6" />
-              </label>
-              <p class="note">Lock a colour to keep it, or swap it for another stash colour.</p>
+              <div class="field">
+                <label class="slider-label">Max colours <output name="capValue">6</output></label>
+                <input type="range" class="input" name="cap" min="2" max="20" value="6" />
+              </div>
+              <p class="photo-hint">Lock a colour to keep it, or swap it for another stash colour.</p>
               <ul class="chosen-colors"></ul>
             </fieldset>
 
-            <fieldset>
+            <fieldset class="photo-group">
               <legend>Adjust photo</legend>
-              <label class="slider">
-                <span>Brightness <output name="brightnessValue">0</output></span>
-                <input type="range" name="brightness" min="-100" max="100" value="0" />
-              </label>
-              <label class="slider">
-                <span>Contrast <output name="contrastValue">0</output></span>
-                <input type="range" name="contrast" min="-100" max="100" value="0" />
-              </label>
-              <label class="slider">
-                <span>Saturation <output name="saturationValue">0</output></span>
-                <input type="range" name="saturation" min="-100" max="100" value="0" />
-              </label>
-              <button type="button" data-action="reset-adjust">Reset adjustments</button>
+              <div class="field">
+                <label class="slider-label">Brightness <output name="brightnessValue">0</output></label>
+                <input type="range" class="input" name="brightness" min="-100" max="100" value="0" />
+              </div>
+              <div class="field">
+                <label class="slider-label">Contrast <output name="contrastValue">0</output></label>
+                <input type="range" class="input" name="contrast" min="-100" max="100" value="0" />
+              </div>
+              <div class="field">
+                <label class="slider-label">Saturation <output name="saturationValue">0</output></label>
+                <input type="range" class="input" name="saturation" min="-100" max="100" value="0" />
+              </div>
+              <button type="button" class="btn" data-variant="outline" data-size="sm" data-action="reset-adjust">
+                Reset adjustments
+              </button>
             </fieldset>
 
-            <fieldset>
+            <fieldset class="photo-group">
               <legend>Background</legend>
-              <label class="toggle">
-                <input type="checkbox" name="removeBackground" /> Remove background (beads left empty)
+              <label class="label photo-switch">
+                <input type="checkbox" role="switch" class="input" name="removeBackground" />
+                Remove background (beads left empty)
               </label>
               <div class="background-pick">
-                <button type="button" data-action="pick-background">Pick colour in photo</button>
+                <button type="button" class="btn" data-variant="outline" data-size="sm" data-action="pick-background">
+                  <i data-lucide="pipette"></i> Pick colour in photo
+                </button>
                 <span class="swatch-inline background-swatch is-empty"></span>
               </div>
-              <p class="note picking-note" hidden>Click the background in the photo (Esc to stop).</p>
-              <label class="slider">
-                <span>How similar <output name="toleranceValue">12</output></span>
-                <input type="range" name="tolerance" min="3" max="40" value="12" />
-              </label>
+              <p class="photo-hint picking-note" hidden>Click the background in the photo (Esc to stop).</p>
+              <div class="field">
+                <label class="slider-label">How similar <output name="toleranceValue">12</output></label>
+                <input type="range" class="input" name="tolerance" min="3" max="40" value="12" />
+              </div>
             </fieldset>
           </form>
-        </div>
-        <div class="dialog-buttons">
-          <button type="button" data-action="cancel">Cancel</button>
-          <button type="button" class="primary" data-action="apply">Apply to chart</button>
-        </div>
-      </dialog>
+        </section>
 
-      <!-- Pick a colour from a photo of my beads (src/photo-color-picker.js) -->
-      <dialog id="pick-color-dialog" class="pick-color-dialog">
-        <h3>Pick colour from photo</h3>
-        <ul class="note pick-tips">
-          <li>Take the photo in <strong>daylight</strong>, not under a lamp.</li>
-          <li>Put the beads on <strong>white paper</strong>.</li>
-          <li>Avoid <strong>shiny reflections</strong>: pick an area without bright highlights.</li>
-        </ul>
-        <div class="pick-toolbar">
-          <button type="button" data-action="zoom-out" aria-label="Zoom out">−</button>
-          <span class="pick-zoom-label zoom-label">100%</span>
-          <button type="button" data-action="zoom-in" aria-label="Zoom in">+</button>
-          <button type="button" data-action="fit">Fit</button>
-          <button type="button" data-action="choose-photo">Choose another photo…</button>
-          <input type="file" accept="image/*" hidden />
-        </div>
-        <div class="pick-viewport">
-          <div class="pick-stage">
-            <!-- the photo (a canvas) is put here -->
-            <div class="pick-selection" hidden></div>
+        <footer>
+          <button type="button" class="btn" data-variant="outline" data-action="cancel">Cancel</button>
+          <button type="button" class="btn" data-action="apply">Apply to chart</button>
+        </footer>
+        <button type="button" aria-label="Close" data-action="cancel"><i data-lucide="x"></i></button>
+      </div>
+    </dialog>
+
+    <!-- Pick a colour from a photo of my beads (src/photo-color-picker.js) -->
+    <dialog id="pick-color-dialog" class="dialog pick-color-dialog" aria-labelledby="pick-title">
+      <div>
+        <header>
+          <h2 id="pick-title">Pick colour from photo</h2>
+          <ul class="pick-tips">
+            <li>Take the photo in <strong>daylight</strong>, not under a lamp.</li>
+            <li>Put the beads on <strong>white paper</strong>.</li>
+            <li>Avoid <strong>shiny reflections</strong>: pick an area without bright highlights.</li>
+          </ul>
+        </header>
+
+        <section class="pick-body">
+          <div class="pick-toolbar">
+            <button type="button" class="btn" data-variant="outline" data-size="icon-sm" data-action="zoom-out" aria-label="Zoom out">
+              <i data-lucide="minus"></i>
+            </button>
+            <span class="pick-zoom-label zoom-percent">100%</span>
+            <button type="button" class="btn" data-variant="outline" data-size="icon-sm" data-action="zoom-in" aria-label="Zoom in">
+              <i data-lucide="plus"></i>
+            </button>
+            <button type="button" class="btn" data-variant="outline" data-size="sm" data-action="fit">Fit</button>
+            <button type="button" class="btn" data-variant="outline" data-size="sm" data-action="choose-photo">
+              <i data-lucide="image-plus"></i> Choose another photo…
+            </button>
+            <input type="file" accept="image/*" hidden />
           </div>
-        </div>
-        <p class="note">Zoom in, then click on the beads or drag over a small area. The average colour of the area is used.</p>
-        <div class="pick-compare">
-          <span>Current <span class="swatch-inline pick-swatch pick-current"></span></span>
-          <span>Picked <span class="swatch-inline pick-swatch pick-picked is-empty"></span> <code class="pick-hex"></code></span>
-        </div>
-        <div class="dialog-buttons">
-          <button type="button" data-action="cancel">Cancel</button>
-          <button type="button" class="primary" data-action="use">Use this colour</button>
-        </div>
-      </dialog>
+          <div class="pick-viewport">
+            <div class="pick-stage">
+              <!-- the photo (a canvas) is put here -->
+              <div class="pick-selection" hidden></div>
+            </div>
+          </div>
+          <p class="photo-hint">Zoom in, then click on the beads or drag over a small area. The average colour of the area is used.</p>
+          <div class="pick-compare">
+            <span>Current <span class="swatch-inline pick-swatch pick-current"></span></span>
+            <span>Picked <span class="swatch-inline pick-swatch pick-picked is-empty"></span> <code class="pick-hex"></code></span>
+          </div>
+        </section>
 
-    </div>
+        <footer>
+          <button type="button" class="btn" data-variant="outline" data-action="cancel">Cancel</button>
+          <button type="button" class="btn" data-action="use">Use this colour</button>
+        </footer>
+        <button type="button" aria-label="Close" data-action="cancel"><i data-lucide="x"></i></button>
+      </div>
+    </dialog>
+
     <!-- My stash (src/stash-screen.js). Opens over the chart. -->
     <dialog id="stash-dialog" class="dialog stash-dialog" aria-labelledby="stash-title">
       <div>
