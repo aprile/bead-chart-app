@@ -42,7 +42,7 @@ export function setupChartView(elements) {
   let scale = 1; // pixels per mm right now
   let content = { width: 0, height: 0 };
   let layout = null;
-  let overlay = null; // see setOverlay() below
+  const overlays = []; // see addOverlay() below
 
   function saveView() {
     save(STORAGE_KEYS.view, view);
@@ -123,7 +123,7 @@ export function setupChartView(elements) {
     const width = Math.min(viewport.clientWidth, content.width);
     const height = Math.min(viewport.clientHeight, content.height);
     drawChart(canvas, chart, layout, width, height);
-    overlay?.(canvas, layout); // e.g. the selection outline, on top of the beads
+    for (const overlay of overlays) overlay(canvas, layout); // e.g. the selection outline, on top of the beads
   }
 
   function updateControls() {
@@ -225,9 +225,10 @@ export function setupChartView(elements) {
     render,
     // Redraw without re-measuring (e.g. while dragging out a selection).
     repaint: paint,
-    // fn(canvas, layout) draws extra things on top of the chart after every redraw.
-    setOverlay(fn) {
-      overlay = fn;
+    // fn(canvas, layout) draws extra things on top of the chart after every
+    // redraw (the selection, working mode's current row). Drawn in the order added.
+    addOverlay(fn) {
+      overlays.push(fn);
     },
     getLayout: () => layout,
     isSideways, // is the open chart shown turned sideways?

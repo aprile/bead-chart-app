@@ -20,7 +20,7 @@ export default {
     return { x: 0, y: 0 };
   },
 
-  readingOrder(cols, rows) {
+  workRows(cols, rows) {
     return rowByRow(cols, rows, { alternate: true });
   },
 };

@@ -17,8 +17,14 @@
 //                       from the plain grid, in beads: { x, y }. Rows count from
 //                       the TOP; the chart's size is there for counting from the
 //                       bottom or the right.
-// - readingOrder(cols, rows)  every bead in the order it's stitched,
-//                       starting bottom left: [{ row, col }, …]
+// - workRows(cols, rows)  the rows as they're worked (working mode), from
+//                       the bottom: [{ beads, label, last }, …]
+//                       beads: that row's beads in pick-up order [{ row, col }, …]
+//                       label: e.g. "Row 3", or "Rows 1 & 2" when worked together
+//                       last:  the highest row number it covers (the last
+//                       one's `last` is the total number of rows to stitch)
+//                       One working row can be two chart rows (two-drop
+//                       brick), or every other bead of one (peyote).
 //
 // To add a stitch: write its module and add it to the list below.
 

@@ -2,6 +2,8 @@
 // Each pair of rows is stacked straight, and each pair is shifted half a
 // bead from the next. See index.js for what each part means.
 
+import { rowLabel } from './reading-order.js';
+
 export default {
   id: 'brick2',
   label: 'Two-drop brick',
@@ -27,19 +29,24 @@ export default {
   },
 
   // Pair by pair, going up, alternating direction: the bottom pair left to
-  // right, the next right to left, and so on. Each stitch adds two beads
-  // stacked on top of each other: the top one is picked up first.
-  readingOrder(cols, rows) {
-    const order = [];
+  // right, the next right to left, and so on. Each pair is one working row.
+  // Each stitch adds two beads stacked on top of each other: the top one is
+  // picked up first.
+  workRows(cols, rows) {
+    const workRows = [];
     for (let bottom = rows - 1, pair = 0; bottom >= 0; bottom -= 2, pair++) {
       const top = bottom - 1; // -1 means this "pair" is a single row (top of the chart)
       const leftToRight = pair % 2 === 0;
+      const beads = [];
       for (let i = 0; i < cols; i++) {
         const col = leftToRight ? i : cols - 1 - i;
-        if (top >= 0) order.push({ row: top, col });
-        order.push({ row: bottom, col });
+        if (top >= 0) beads.push({ row: top, col });
+        beads.push({ row: bottom, col });
       }
+      const first = rows - bottom; // row numbers count from 1 at the bottom
+      const last = top >= 0 ? first + 1 : first;
+      workRows.push({ beads, label: rowLabel(first, last), last });
     }
-    return order;
+    return workRows;
   },
 };

@@ -20,6 +20,7 @@ import { setupStashOffer, colorsNotInStash } from './stash-offer.js';
 import { setupPictureDialog } from './picture-dialog.js';
 import { setupPainting } from './painting.js';
 import { setupWorkMode } from './work-mode.js';
+import { setupProgress } from './progress.js';
 import { setupStashScreen } from './stash-screen.js';
 import { setupChartsScreen } from './charts-screen.js';
 import { setupViews } from './views.js';
@@ -155,9 +156,15 @@ function onModeChange(mode) {
   if (mode === 'work') {
     document.activeElement?.blur(); // finish any size edit you were typing
     selection.clear();
-    redraw();
   }
+  redraw(); // the current row is only drawn while working
 }
+
+// Working mode's progress panel and the current row on the chart.
+const progress = setupProgress(document.querySelector('#progress-panel'), {
+  chartView,
+  isWorking: () => workMode.isWorking(),
+});
 
 setupPainting(canvas, {
   getLayout: () => chartView.getLayout(),
@@ -174,6 +181,7 @@ setupPainting(canvas, {
   isPasting: () => selection.isPasting(),
   onSelectDrag: (phase, bead, point) => selection.onDrag(phase, bead, point),
   isLocked: () => workMode.isWorking(),
+  onLockedClick: (bead) => progress.jumpTo(bead),
   onStrokeEnd() {
     chartView.repaint(); // painting redraws single beads, which can cover the selection outline
     updateButtons();

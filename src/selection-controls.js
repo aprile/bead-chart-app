@@ -48,7 +48,7 @@ export function setupSelection(root, { pasteBar, chartView, getBrushColorId, isA
     return { top: at.row, left: at.col, bottom: at.row + piece.rows - 1, right: at.col + piece.cols - 1 };
   }
 
-  chartView.setOverlay((canvas, layout) => {
+  chartView.addOverlay((canvas, layout) => {
     if (floating) {
       drawPiece(canvas, layout, floating.piece, floating.at);
       const visible = clampRect(pieceRect(), layout);

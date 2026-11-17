@@ -25,7 +25,7 @@ export default {
   },
 
   // Row by row, going up from the bottom. Each row is one pick-up, left to right.
-  readingOrder(cols, rows) {
+  workRows(cols, rows) {
     return rowByRow(cols, rows, { alternate: false });
   },
 };

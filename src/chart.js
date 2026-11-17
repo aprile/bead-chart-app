@@ -5,6 +5,7 @@
 // { id, version: 2, name, stitch, beadSize, widthMm, heightMm, cols, rows,
 //   beads: [[color id or null, ...], ...],   ← beads[row][col], null = empty
 //   backgroundBead,                           ← colour id every empty bead is stitched in, or null
+//   progress?: { row },                       ← working mode: the working row I'm on (see setProgress)
 //   createdAt, updatedAt }                    ← times in milliseconds
 // Older (v1) charts are upgraded when they're loaded: see migrate.js.
 
@@ -265,12 +266,13 @@ export function clearChart() {
   notify();
 }
 
+// The name and working progress aren't part of undo, so they're kept as they are.
 export function undo() {
   endResize();
   if (!canUndo()) return false;
-  const name = chart.name;
+  const { name, progress } = chart;
   redoStack.push(chart);
-  chart = { ...undoStack.pop(), name };
+  chart = { ...undoStack.pop(), name, progress };
   notify();
   return true;
 }
@@ -278,9 +280,19 @@ export function undo() {
 export function redo() {
   endResize();
   if (!canRedo()) return false;
-  const name = chart.name;
+  const { name, progress } = chart;
   undoStack.push(chart);
-  chart = { ...redoStack.pop(), name };
+  chart = { ...redoStack.pop(), name, progress };
   notify();
   return true;
+}
+
+// ---- Working mode progress ----
+// { row }: the working row I'm on (0 = the first, see workRows in the stitch
+// modules). Not part of undo. Missing = not started (the first row).
+
+export function setProgress(row) {
+  if (chart.progress?.row === row) return;
+  chart.progress = { row };
+  notify();
 }

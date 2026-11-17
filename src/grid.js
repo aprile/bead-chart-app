@@ -536,8 +536,23 @@ export function drawSelection(canvas, layout, rect, { tint = true } = {}) {
     }
   }
 
-  // The outline: stroke every cell with a wide line on a scratch canvas, then
-  // rub out everything inside the cells. Only the outside edge is left.
+  if (tint) {
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    clipToChartArea(ctx, layout);
+    useChartSpace(ctx, layout);
+    ctx.fillStyle = SELECTION_TINT;
+    ctx.fill(cells);
+    ctx.restore();
+  }
+  drawOutline(canvas, layout, cells, SELECTION_LINE);
+}
+
+// Draws a line around the outside of some cells (a Path2D of rectangles, in
+// chart space), with a white edge outside it so it shows on dark beads.
+// How: stroke every cell with a wide line on a scratch canvas, then rub out
+// everything inside the cells. Only the outside edge is left.
+function drawOutline(canvas, layout, cells, color) {
   const scratch = document.createElement('canvas');
   scratch.width = canvas.width;
   scratch.height = canvas.height;
@@ -547,7 +562,7 @@ export function drawSelection(canvas, layout, rect, { tint = true } = {}) {
   sctx.strokeStyle = SELECTION_HALO;
   sctx.lineWidth = 7;
   sctx.stroke(cells);
-  sctx.strokeStyle = SELECTION_LINE;
+  sctx.strokeStyle = color;
   sctx.lineWidth = 4;
   sctx.stroke(cells);
   sctx.globalCompositeOperation = 'destination-out';
@@ -556,14 +571,47 @@ export function drawSelection(canvas, layout, rect, { tint = true } = {}) {
   const ctx = canvas.getContext('2d');
   ctx.save();
   clipToChartArea(ctx, layout);
-  useChartSpace(ctx, layout);
-  if (tint) {
-    ctx.fillStyle = SELECTION_TINT;
-    ctx.fill(cells);
-  }
   ctx.setTransform(1, 0, 0, 1, 0, 0); // the scratch canvas is already in real pixels
   ctx.drawImage(scratch, 0, 0);
   ctx.restore();
+}
+
+// ---------- Working mode ----------
+
+const WORK_ROW_LINE = '#ea580c'; // orange, so it can't be mixed up with the blue selection
+const DONE_FADE = 0.6; // how strongly finished beads are faded out
+
+// Working mode: fades out the beads in finished rows and outlines the
+// current row. workRowOf(row, col) says which working row a bead is in
+// (0 = the first); current is the working row I'm on. Only the beads on
+// screen are looked at, so it's quick even on a long chart.
+export function drawWorkRows(canvas, layout, workRowOf, current) {
+  const done = new Path2D();
+  const now = new Path2D();
+  const { firstRow, lastRow, firstCol, lastCol } = visibleRange(layout);
+  // On a long chart the current row may be off screen: only the outline
+  // of the visible part is drawn (the cells just beyond are added so the
+  // outline doesn't close up along the edge of the screen).
+  for (let row = Math.max(0, firstRow - 1); row <= Math.min(layout.rows - 1, lastRow + 1); row++) {
+    for (let col = Math.max(0, firstCol - 1); col <= Math.min(layout.cols - 1, lastCol + 1); col++) {
+      const workRow = workRowOf(row, col);
+      if (workRow > current) continue;
+      const cell = cellPosition(layout, row, col);
+      const path = workRow < current ? done : now;
+      path.rect(layout.originX + cell.x, layout.originY + cell.y, layout.beadW, layout.beadH);
+    }
+  }
+
+  const ctx = canvas.getContext('2d');
+  ctx.save();
+  clipToChartArea(ctx, layout);
+  useChartSpace(ctx, layout);
+  // Fade with the colour behind the chart, so it works in dark mode too.
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--chart-area-bg').trim() || '#f4f4f5';
+  ctx.globalAlpha = DONE_FADE;
+  ctx.fill(done);
+  ctx.restore();
+  drawOutline(canvas, layout, now, WORK_ROW_LINE);
 }
 
 // Draws a pasted piece floating over the chart, with its top-left bead at

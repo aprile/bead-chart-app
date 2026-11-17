@@ -26,7 +26,7 @@ export default {
 
   // Row by row, going up from the bottom, alternating direction:
   // the bottom row left to right, the next right to left, and so on.
-  readingOrder(cols, rows) {
+  workRows(cols, rows) {
     return rowByRow(cols, rows, { alternate: true });
   },
 };

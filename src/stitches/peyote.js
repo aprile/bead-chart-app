@@ -9,6 +9,8 @@
 //   bead of every high column, row 3 = the 2nd bead of every low column, and
 //   so on. So each chart row (counted from the bottom) holds two peyote rows.
 
+import { rowLabel } from './reading-order.js';
+
 function isLowColumn(col, cols) {
   return (cols - 1 - col) % 2 === 0;
 }
@@ -35,23 +37,27 @@ export default {
   },
 
   // Zig-zag rows, going up. Rows 1 + 2 are picked up together, left to
-  // right (every bead of the bottom chart row). Then each peyote row is
-  // every other bead: row 3 right to left along the low columns, row 4
-  // left to right along the high columns, and so on.
-  readingOrder(cols, rows) {
-    const order = [];
+  // right (every bead of the bottom chart row): that's the first working
+  // row. Then each peyote row is every other bead: row 3 right to left along
+  // the low columns, row 4 left to right along the high columns, and so on.
+  workRows(cols, rows) {
     const bottom = rows - 1;
-    for (let col = 0; col < cols; col++) order.push({ row: bottom, col });
+    const first = [];
+    for (let col = 0; col < cols; col++) first.push({ row: bottom, col });
+    // With one column there's no zig-zag: the single bead is peyote row 1.
+    const workRows = [{ beads: first, label: cols > 1 ? rowLabel(1, 2) : rowLabel(1), last: cols > 1 ? 2 : 1 }];
 
     for (let peyoteRow = 3; peyoteRow <= rows * 2; peyoteRow++) {
       const row = bottom - Math.floor((peyoteRow - 1) / 2);
       const low = peyoteRow % 2 === 1; // odd peyote rows are in the low columns
       const rightToLeft = peyoteRow % 2 === 1;
+      const beads = [];
       for (let i = 0; i < cols; i++) {
         const col = rightToLeft ? cols - 1 - i : i;
-        if (isLowColumn(col, cols) === low) order.push({ row, col });
+        if (isLowColumn(col, cols) === low) beads.push({ row, col });
       }
+      if (beads.length > 0) workRows.push({ beads, label: rowLabel(peyoteRow), last: peyoteRow });
     }
-    return order;
+    return workRows;
   },
 };
