@@ -166,13 +166,17 @@
               <i data-lucide="arrow-right"></i> <span id="progress-direction-text"></span>
             </p>
             <div class="panel-buttons">
-              <button type="button" id="progress-next" class="btn" data-variant="default">
+              <button type="button" id="progress-next" class="btn" data-variant="default" title="Next row (↑ or space)">
                 <i data-lucide="chevron-up"></i> Next row
               </button>
-              <button type="button" id="progress-previous" class="btn" data-variant="ghost">
+              <button type="button" id="progress-previous" class="btn" data-variant="ghost" title="Previous row (↓)">
                 <i data-lucide="chevron-down"></i> Previous row
               </button>
             </div>
+
+            <h3 class="progress-colors-heading">Pick up, in order</h3>
+            <ol id="progress-colors" class="progress-colors"></ol>
+
             <p class="panel-hint">Click a bead to jump to its row. Painting is off while you work.</p>
           </section>
         </aside>

@@ -164,6 +164,7 @@ function onModeChange(mode) {
 const progress = setupProgress(document.querySelector('#progress-panel'), {
   chartView,
   isWorking: () => workMode.isWorking(),
+  isActive: () => views?.isShowing('chart'),
 });
 
 setupPainting(canvas, {
