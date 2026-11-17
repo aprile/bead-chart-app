@@ -26,8 +26,9 @@ export function setupNewChartPanel(form, { onChange, onEditEnd }) {
   const fields = form.elements; // every named input, e.g. fields.width
 
   // Which box I typed in last, for each direction: the size ("size") or the
-  // bead count ("count"). That one stays fixed when the stitch or bead size
-  // changes, and the other one is worked out from it.
+  // bead count ("count"). That one stays fixed when the stitch changes, and
+  // the other one is worked out from it. Changing the bead size always keeps
+  // the bead counts (see the 'input' listener).
   const typedLast = { across: 'size', down: 'size' };
 
   let unit = fields.unit.value; // remembered, so a unit change can convert the numbers
@@ -115,6 +116,12 @@ export function setupNewChartPanel(form, { onChange, onEditEnd }) {
     if (name === 'cols') typedLast.across = 'count';
     if (name === 'height') typedLast.down = 'size';
     if (name === 'rows') typedLast.down = 'count';
+    // A new bead size keeps the design as it is: the same columns and rows,
+    // and the finished size follows (bigger or smaller beads).
+    if (name === 'beadSize') {
+      typedLast.across = 'count';
+      typedLast.down = 'count';
+    }
 
     if (name === 'unit') {
       // Same size, different unit: convert the numbers (2 cm → 20 mm).

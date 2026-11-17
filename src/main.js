@@ -391,7 +391,8 @@ setupPhotoImport({
   getChart: chart.getChart,
   onApply(beads) {
     selection.cancelPaste();
-    chart.setAllBeads(beads);
+    chart.setAllBeads(beads); // the photo's size may be different: the chart takes it
+    panel.showChart(chart.getChart()); // so the Chart tab shows the new size
     redraw();
     // The photo may have used colours that aren't in my stash: offer to add them.
     const { beadSize } = chart.getChart();

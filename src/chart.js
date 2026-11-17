@@ -13,6 +13,7 @@ import { CHART_VERSION } from './migrate.js';
 import { countBeadsOf, replaceColorIn } from './chart-colors.js';
 import { getStitch } from './stitches/index.js';
 import { shapeAt, keepsShape } from './selection.js';
+import { realSize } from './sizing.js';
 
 export const DEFAULT_NAME = 'Untitled chart';
 
@@ -252,9 +253,18 @@ export function isEmpty() {
 }
 
 // Replace every bead at once (e.g. from a photo), as one undo step.
+// beads has its own number of rows and columns: if that's not the chart's
+// size, the chart changes to it, and the finished size follows (the photo
+// import can choose a different size).
 export function setAllBeads(beads) {
   endResize();
   saveUndoStep(copyChart(chart));
+  const rows = beads.length;
+  const cols = beads[0].length;
+  if (rows !== chart.rows || cols !== chart.cols) {
+    const { realWidthMm, realHeightMm } = realSize({ ...chart, cols, rows });
+    chart = { ...chart, cols, rows, widthMm: realWidthMm, heightMm: realHeightMm };
+  }
   chart.beads = beads.map((row) => [...row]);
   notify();
 }

@@ -928,6 +928,21 @@
   color: var(--muted-foreground);
 }
 
+/* Photo import: columns and rows side by side */
+.photo-size-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.photo-size-row .field {
+  gap: 0.25rem;
+}
+
+.photo-size-note.error {
+  color: var(--destructive);
+}
+
 .photo-switch {
   align-items: flex-start;
   max-width: 18rem;

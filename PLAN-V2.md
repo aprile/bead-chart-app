@@ -238,6 +238,9 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
     - Step 3 done: **the row's colours** under the buttons ("Pick up, in order": `3 × ● 401 Black`, consecutive beads of one colour grouped; empty beads count as the background bead) and **keys**: ↑ / → / space = next row, ↓ / ← = previous row (not while typing or in a dialog).
     - Step 4 done: **the chart scrolls to the current row** when it isn't in view (next/previous row, keys, switching to Work, opening a chart, turning sideways); a row that fits is put in the middle, a row longer than the screen only scrolls when none of it shows (`scrollToShow` in `chart-view.js`, `beadsBox` in `grid.js`). **Start again** button (asks first) goes back to the first row.
     - Next: peyote turn at the row ends, keep screen on.
+  - Changed 2026-11-17 (asked for during milestone 8):
+    - **Changing the bead size keeps the columns and rows** (the design stays the same); only the finished size changes (`new-chart-panel.js`). Changing the stitch still keeps whichever box I typed in last.
+    - **Photo import chooses the chart size**: a Size section (Columns, Rows) in the photo dialog, starting at the chart's size. "Keep the box's shape" (on): the other count follows, so the crop box keeps its shape; off: the box changes shape (same area and middle). Apply changes the chart to that size, with the finished size following, in the same undo step as the beads (`setAllBeads` takes the size from the beads).
 
 ## Open questions
 - ~~**Peyote even/odd count**~~ (answered 2026-11-17): yes, it's whether the column count is even or odd. Worked out from `cols`; no `peyoteCount` setting.

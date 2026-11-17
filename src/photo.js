@@ -14,13 +14,16 @@ import { createColorMatcher, chooseColors } from './color-match.js';
 import { rgbToLab, rgbToHex } from './color-math.js';
 import { stashColors, allColors, sortByFamily, getColor, colorLabel } from './colors.js';
 import { drawPreview } from './grid.js';
-import { formatLength } from './sizing.js';
+import { formatLength, beadSpacing } from './sizing.js';
+import { getStitch } from './stitches/index.js';
 import { escapeHtml } from './html.js';
 
 const PREVIEW_MAX_WIDTH = 280;
 const CONTROLS_WIDTH = 320;
+const MAX_BEADS = 1000; // per direction, like the Chart tab
 
-// getChart() → the open chart; onApply(beads) → put the new beads in the chart.
+// getChart() → the open chart.
+// onApply(beads, { cols, rows }) → put the new beads in the chart, at that size.
 export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   const dialog = document.querySelector('#photo-dialog');
   const stage = dialog.querySelector('.photo-stage');
@@ -33,12 +36,14 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   const chosenList = dialog.querySelector('.chosen-colors');
   const backgroundSwatch = dialog.querySelector('.background-swatch');
   const pickingNote = dialog.querySelector('.picking-note');
+  const sizeNote = dialog.querySelector('.photo-size-note');
 
   let photo = null; // the shrunk photo (a canvas), shown in the stage
   let chart = null; // the open chart, when the dialog was opened
   let stash = []; // stash colours for the chart's bead size
   let everyColor = []; // every colour (Miyuki and mine) made in the chart's bead size
-  let aspect = 1; // crop box width ÷ height (the chart's real shape)
+  let size = null; // { cols, rows }: the chart size under Size (starts at the chart's own)
+  let aspect = 1; // crop box width ÷ height (the real shape of that size)
   let box = null; // crop box { x, y, w, h } in photo pixels
 
   let sampled = null; // step 1 result: rows of [r, g, b], one per bead
@@ -87,9 +92,10 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   });
 
   function open() {
-    const shape = chartShape(chart);
-    aspect = shape.aspect;
-    shapeText.textContent = `${formatLength(shape.widthMm, 'cm')} × ${formatLength(shape.heightMm, 'cm')}`;
+    size = { cols: chart.cols, rows: chart.rows };
+    fields.photoCols.value = size.cols;
+    fields.photoRows.value = size.rows;
+    showSize();
 
     // Start with the biggest box that fits, in the middle of the photo.
     const w = Math.min(photo.width, photo.height * aspect);
@@ -123,6 +129,75 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     const scale = Math.min(maxWidth / photo.width, maxHeight / photo.height);
     photo.style.width = `${photo.width * scale}px`;
     photo.style.height = `${photo.height * scale}px`;
+  }
+
+  // ---------- Size (columns × rows) ----------
+
+  // The chart as it will be after Apply: the open chart at the size under Size.
+  function target() {
+    return { ...chart, cols: size.cols, rows: size.rows };
+  }
+
+  // Show the finished size, and work out the crop box's shape from it.
+  function showSize() {
+    const shape = chartShape(target());
+    aspect = shape.aspect;
+    const finished = `${formatLength(shape.widthMm, 'cm')} × ${formatLength(shape.heightMm, 'cm')}`;
+    shapeText.textContent = finished;
+    sizeNote.classList.remove('error');
+    sizeNote.textContent =
+      size.cols === chart.cols && size.rows === chart.rows
+        ? `Finished size ${finished}, the same as the chart.`
+        : `Finished size ${finished}. Apply changes the chart to ${size.cols} × ${size.rows}.`;
+  }
+
+  // How many rows give the box's shape for this many columns (or the other
+  // way round), counting the stitch's overhang and the bead shape.
+  function matchingCount(count, from) {
+    const { columnWidth, rowHeight } = beadSpacing(chart.stitch, chart.beadSize);
+    const { overhang } = getStitch(chart.stitch);
+    const result =
+      from === 'cols'
+        ? ((count + overhang.across) * columnWidth) / aspect / rowHeight - overhang.down
+        : ((count + overhang.down) * rowHeight * aspect) / columnWidth - overhang.across;
+    return clamp(Math.round(result), 1, MAX_BEADS);
+  }
+
+  // Typing in Columns or Rows. With "Keep the box's shape" on, the other box
+  // follows; otherwise the box changes shape.
+  function changeSize(changed) {
+    const input = changed === 'cols' ? fields.photoCols : fields.photoRows;
+    const value = Number(input.value);
+    if (!Number.isInteger(value) || value < 1 || value > MAX_BEADS) {
+      sizeNote.textContent = `Enter a whole number from 1 to ${MAX_BEADS}.`;
+      sizeNote.classList.add('error');
+      return; // keep the last good size
+    }
+    size = { ...size, [changed]: value };
+    if (fields.keepShape.checked) {
+      const other = changed === 'cols' ? 'rows' : 'cols';
+      size[other] = matchingCount(value, changed);
+      (other === 'cols' ? fields.photoCols : fields.photoRows).value = size[other];
+    }
+    showSize();
+    reshapeBox();
+    scheduleUpdate(true);
+  }
+
+  // Give the crop box the new shape: about the same area, around the same
+  // middle, and still inside the photo.
+  function reshapeBox() {
+    const middle = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
+    let w = Math.sqrt(box.w * box.h * aspect);
+    w = Math.min(w, photo.width, photo.height * aspect);
+    const h = w / aspect;
+    box = {
+      x: clamp(middle.x - w / 2, 0, photo.width - w),
+      y: clamp(middle.y - h / 2, 0, photo.height - h),
+      w,
+      h,
+    };
+    renderBox();
   }
 
   // ---------- Crop box ----------
@@ -252,6 +327,9 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   // Any slider or checkbox: show its number and update the preview.
   controls.addEventListener('input', (event) => {
     if (event.target.closest('.chosen-colors')) return; // swap menus are handled below
+    if (event.target === fields.photoCols) return changeSize('cols');
+    if (event.target === fields.photoRows) return changeSize('rows');
+    if (event.target === fields.keepShape) return; // only matters when typing a size
     if (event.target === fields.onlyStash && fields.onlyStash.checked) {
       // Back to my stash only: forget colours I locked or swapped in from outside it.
       const inStash = new Set(stash.map((color) => color.id));
@@ -365,7 +443,7 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     // Step 1 (only when the crop box moved): each bead's most common colour.
     if (resample || !sampled) {
       const started = performance.now();
-      sampled = sampleBeadColors(photo, box, chart);
+      sampled = sampleBeadColors(photo, box, target());
       // If this took longer than ~1/25 s, wait until you let go of the box next time.
       slow = performance.now() - started > 40;
     }
@@ -392,9 +470,9 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     // Draw: either the matched bead colours, or (debug) the sampled colours.
     const maxHeight = photo.getBoundingClientRect().height;
     if (settings.showSampled) {
-      drawPreview(previewCanvas, { ...chart, beads: adjusted }, PREVIEW_MAX_WIDTH, maxHeight, (rgb) => rgb && rgbToHex(rgb));
+      drawPreview(previewCanvas, { ...target(), beads: adjusted }, PREVIEW_MAX_WIDTH, maxHeight, (rgb) => rgb && rgbToHex(rgb));
     } else {
-      drawPreview(previewCanvas, { ...chart, beads }, PREVIEW_MAX_WIDTH, maxHeight);
+      drawPreview(previewCanvas, { ...target(), beads }, PREVIEW_MAX_WIDTH, maxHeight);
     }
 
     const counts = new Map();
@@ -408,14 +486,14 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     backgroundSwatch.classList.toggle('is-empty', !background);
 
     summary.textContent =
-      `${chart.cols} × ${chart.rows} beads · ${chosen.length} colour${chosen.length === 1 ? '' : 's'}` +
+      `${size.cols} × ${size.rows} beads · ${chosen.length} colour${chosen.length === 1 ? '' : 's'}` +
       (empty > 0 ? ` · ${empty} empty (background)` : '');
   }
 
   // ---------- Apply / Cancel ----------
 
   dialog.querySelector('[data-action="apply"]').addEventListener('click', () => {
-    onApply(beads);
+    onApply(beads, size);
     dialog.close();
   });
   // Cancel and the × in the corner.
