@@ -17,7 +17,8 @@ import { beadAtPoint, drawBead } from './grid.js';
 //                point = the pointer position { x, y } on the canvas;
 //                phase is 'start', 'move' or 'end'. The bead is null when
 //                the pointer isn't over one (e.g. off the edge of the chart).
-export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getTool, onBeadClick, isPasting, onSelectDrag }) {
+// isLocked()   → true in work mode: then clicks and drags do nothing
+export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getTool, onBeadClick, isPasting, onSelectDrag, isLocked }) {
   let lastPoint = null; // where the pointer was last time, while dragging
   let selecting = false; // dragging out a selection
 
@@ -55,6 +56,7 @@ export function setupPainting(canvas, { getLayout, getColorId, onStrokeEnd, getT
 
   canvas.addEventListener('pointerdown', (event) => {
     if (event.button !== 0 || !getChart()) return; // left button only
+    if (isLocked()) return; // work mode: the chart can't be changed
     const tool = isPasting() ? 'select' : getTool();
     if (tool === 'fill' || tool === 'picker') {
       const { x, y } = pointFrom(event);

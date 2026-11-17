@@ -19,6 +19,7 @@ import { setupChartImport } from './chart-import.js';
 import { setupStashOffer, colorsNotInStash } from './stash-offer.js';
 import { setupPictureDialog } from './picture-dialog.js';
 import { setupPainting } from './painting.js';
+import { setupWorkMode } from './work-mode.js';
 import { setupStashScreen } from './stash-screen.js';
 import { setupChartsScreen } from './charts-screen.js';
 import { setupViews } from './views.js';
@@ -91,7 +92,9 @@ function updateMissingNote() {
 
 const panel = setupNewChartPanel(document.querySelector('#new-chart-form'), {
   onChange(settings) {
-    chart.resizeChart(settings);
+    // New rows and columns always appear at the top and right of the screen.
+    // Turned sideways, the screen's top is the chart's left side.
+    chart.resizeChart(settings, { growLeft: chartView.isSideways() });
     redraw();
   },
   onEditEnd() {
@@ -135,9 +138,26 @@ const selection = setupSelection(document.querySelector('#left-panel'), {
   pasteBar: document.querySelector('#paste-bar'),
   chartView,
   getBrushColorId: () => palette.getSelectedColorId(),
-  isActive: () => views?.isShowing('chart'),
+  // Copy/paste/delete keys only work on the chart screen, and not while working.
+  isActive: () => views?.isShowing('chart') && !workMode.isWorking(),
   afterChange: () => redraw(),
 });
+
+// Draw / Work switch (top bar). Working switches painting off; anything
+// selected or being pasted is dropped first.
+const workMode = setupWorkMode(
+  document.querySelector('#app'),
+  document.querySelector('#mode-switch'),
+  document.querySelector('#chart-settings'),
+  { onChange: onModeChange },
+);
+function onModeChange(mode) {
+  if (mode === 'work') {
+    document.activeElement?.blur(); // finish any size edit you were typing
+    selection.clear();
+    redraw();
+  }
+}
 
 setupPainting(canvas, {
   getLayout: () => chartView.getLayout(),
@@ -153,6 +173,7 @@ setupPainting(canvas, {
   },
   isPasting: () => selection.isPasting(),
   onSelectDrag: (phase, bead, point) => selection.onDrag(phase, bead, point),
+  isLocked: () => workMode.isWorking(),
   onStrokeEnd() {
     chartView.repaint(); // painting redraws single beads, which can cover the selection outline
     updateButtons();
@@ -377,6 +398,7 @@ setupPhotoImport({
 window.addEventListener('keydown', (event) => {
   if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'z') return;
   if (!views.isShowing('chart')) return;
+  if (workMode.isWorking()) return; // the chart can't change while working
   // In text boxes, let Cmd+Z undo your typing as normal.
   if (event.target.matches('input[type="number"], input[type="text"], input[type="search"], textarea')) return;
   event.preventDefault();

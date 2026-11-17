@@ -50,6 +50,18 @@
         <input type="file" id="chart-file-input" accept=".json,application/json" hidden />
         <span id="save-status" class="save-status" aria-live="polite">Saved</span>
 
+        <!-- Draw / Work (src/work-mode.js). Work switches painting off. -->
+        <div id="mode-switch" class="button-group mode-switch" role="group" aria-label="Mode">
+          <button type="button" class="btn" data-variant="outline" data-size="sm" data-mode="draw" aria-pressed="true"
+            title="Draw and change the chart">
+            <i data-lucide="pencil"></i> Draw
+          </button>
+          <button type="button" class="btn" data-variant="outline" data-size="sm" data-mode="work" aria-pressed="false"
+            title="Stitch from the chart (painting is switched off)">
+            <i data-lucide="list-checks"></i> Work
+          </button>
+        </div>
+
         <nav class="view-switch" aria-label="Screens">
           <a href="#chart" class="btn" data-variant="ghost" data-size="sm"><i data-lucide="paintbrush"></i> Chart</a>
           <a href="#charts" class="btn" data-variant="ghost" data-size="sm"><i data-lucide="folder-open"></i> My charts</a>
@@ -66,7 +78,7 @@
       <!-- The chart screen: tools | canvas | palette + chart settings -->
       <div id="chart-view" class="workspace">
         <aside id="left-panel" class="side-panel left-panel" aria-label="Tools">
-          <section>
+          <section class="draw-only">
             <h2 class="panel-heading">Tools</h2>
             <div class="panel-buttons" role="group" aria-label="Drawing tool">
               <button type="button" class="btn tool" data-variant="ghost" data-tool="brush" aria-pressed="true">
@@ -96,7 +108,7 @@
           </section>
 
           <!-- What to do with the selected beads (Select tool) -->
-          <section>
+          <section class="draw-only">
             <h2 class="panel-heading">Selection</h2>
             <div class="panel-buttons">
               <button type="button" id="selection-copy" class="btn" data-variant="ghost" title="Copy (⌘C)">
@@ -118,7 +130,7 @@
             <p id="selection-status" class="panel-hint selection-status"></p>
           </section>
 
-          <section>
+          <section class="draw-only">
             <h2 class="panel-heading">Edit</h2>
             <div class="panel-buttons">
               <button type="button" id="undo-button" class="btn" data-variant="ghost" title="Undo (⌘Z)">
@@ -133,7 +145,7 @@
             </div>
           </section>
 
-          <section>
+          <section class="draw-only">
             <h2 class="panel-heading">Photo</h2>
             <div class="panel-buttons">
               <button type="button" id="photo-button" class="btn" data-variant="ghost">
@@ -141,6 +153,12 @@
               </button>
               <input type="file" id="photo-file" accept="image/*" hidden />
             </div>
+          </section>
+
+          <!-- Work mode: the progress panel (row tracking comes in the next step) -->
+          <section class="work-only">
+            <h2 class="panel-heading">Progress</h2>
+            <p class="panel-hint">Painting is off while you work. Switch to Draw to change the chart.</p>
           </section>
         </aside>
 
@@ -198,6 +216,12 @@
             </div>
 
             <div role="tabpanel" id="side-tabs-panel-2" aria-labelledby="side-tabs-tab-2" tabindex="-1" class="tab-content" hidden>
+              <p class="panel-hint work-only work-lock-note">
+                <i data-lucide="lock"></i> Locked while you work. Switch to Draw to change these.
+              </p>
+              <!-- Everything that changes the chart. Disabled in work mode (src/work-mode.js);
+                   the View switches below stay usable. -->
+              <fieldset id="chart-settings" class="chart-settings">
               <form id="new-chart-form" class="chart-form">
                 <div class="field">
                   <label for="stitch">Stitch</label>
@@ -267,6 +291,7 @@
                 </div>
                 <p class="panel-hint">Empty beads are drawn in this colour, ready to stitch. The eraser paints beads back to it.</p>
               </section>
+              </fieldset>
 
               <section class="view-options">
                 <h2 class="panel-heading">View</h2>

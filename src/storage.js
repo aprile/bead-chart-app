@@ -19,6 +19,7 @@ export const STORAGE_KEYS = {
   panels: `${PREFIX}panels`, // which side panels are showing
   pictureExport: `${PREFIX}pictureExport`, // the PNG export options last used
   palette: `${PREFIX}palette`, // palette showing "My stash" or "All colours"
+  mode: `${PREFIX}mode`, // "draw" or "work" (the switch in the top bar)
   currentChartId: `${PREFIX}currentChart`,
 };
 

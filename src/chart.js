@@ -133,7 +133,10 @@ export function endStroke() {
 // began, and the whole edit is one undo step. The edit ends when you leave the
 // field (or click a radio button, paint, undo…).
 
-export function resizeChart(settings) {
+// growLeft: add or cut columns on the LEFT instead of the right. Used when the
+// chart is shown turned sideways, where the chart's left side is the top of
+// the screen, so new beads still appear at the top and right of the screen.
+export function resizeChart(settings, { growLeft = false } = {}) {
   if (!resizeBase) {
     resizeBase = copyChart(chart);
     saveUndoStep(resizeBase);
@@ -141,8 +144,9 @@ export function resizeChart(settings) {
   const base = resizeBase;
   // Keep the beads that still fit, anchored at the BOTTOM LEFT (row 1,
   // column 1), where the work starts. Rows and columns are added or cut at
-  // the top and right.
-  const at = resizedPosition(base, settings);
+  // the top and right. (With growLeft: anchored at the bottom right, and
+  // columns are added or cut on the left.)
+  const at = resizedPosition(base, settings, growLeft);
   const beads = emptyBeads(settings.cols, settings.rows).map((row, r) =>
     row.map((_, c) => base.beads[r - at.row]?.[c - at.col] ?? null),
   );
@@ -151,16 +155,17 @@ export function resizeChart(settings) {
 }
 
 // Where the old beads go in the resized chart: the row and column (in the new
-// chart) of the old top-left bead. Normally that keeps the bottom-left corner
+// chart) of the old top-left bead. Normally that keeps the bottom-left (or, with growLeft, bottom-right) corner
 // in place. But on stitches with half-bead offsets (e.g. brick, where the
 // shift depends on the number of rows), that could change the design's shape.
 // Then we move it by a row or column (up to 3 for two-drop brick) to where the
 // shape stays the same (the same check as pasting, see selection.js),
 // choosing the move that cuts off the fewest painted beads, then the smallest move.
-function resizedPosition(base, settings) {
-  const bottomLeft = { row: settings.rows - base.rows, col: 0 };
+function resizedPosition(base, settings, growLeft) {
+  // The corner that stays put: bottom left, or bottom right with growLeft.
+  const corner = { row: settings.rows - base.rows, col: growLeft ? settings.cols - base.cols : 0 };
   const stitch = getStitch(settings.stitch);
-  if (stitch !== getStitch(base.stitch)) return bottomLeft; // a different stitch can't keep the shape anyway
+  if (stitch !== getStitch(base.stitch)) return corner; // a different stitch can't keep the shape anyway
   const piece = { rows: base.rows, cols: base.cols, shape: shapeAt(stitch, base, 0, 0, base.rows, base.cols) };
 
   // How many painted beads would end up off the new chart.
@@ -178,7 +183,7 @@ function resizedPosition(base, settings) {
   let best = null;
   for (let dr = -3; dr <= 3; dr++) {
     for (let dc = -3; dc <= 3; dc++) {
-      const at = { row: bottomLeft.row + dr, col: bottomLeft.col + dc };
+      const at = { row: corner.row + dr, col: corner.col + dc };
       if (!keepsShape(stitch, settings, piece, at)) continue;
       const score = [cut(at), Math.hypot(dr, dc)];
       if (!best || score[0] < best.score[0] || (score[0] === best.score[0] && score[1] < best.score[1])) {
@@ -186,7 +191,7 @@ function resizedPosition(base, settings) {
       }
     }
   }
-  return best ? best.at : bottomLeft;
+  return best ? best.at : corner;
 }
 
 export function endResize() {

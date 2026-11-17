@@ -93,6 +93,21 @@
   color: var(--muted-foreground);
 }
 
+/* ---------- Draw / Work switch (src/work-mode.js) ---------- */
+
+/* The chosen mode looks filled in */
+.mode-switch .btn[aria-pressed='true'],
+.mode-switch .btn[aria-pressed='true']:hover {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* #app gets data-mode="draw" or "work". Each mode hides the other's parts. */
+.app[data-mode='work'] .draw-only,
+.app:not([data-mode='work']) .work-only {
+  display: none;
+}
+
 /* ---------- Chart screen: panel | canvas | panel ---------- */
 
 .workspace {
@@ -204,6 +219,11 @@
   left: 0;
   touch-action: none; /* dragging on a touch screen paints instead of scrolling */
   cursor: crosshair;
+}
+
+/* Working: no painting, so a normal pointer */
+.app[data-mode='work'] #chart-canvas {
+  cursor: default;
 }
 
 .zoom-controls {
@@ -444,6 +464,28 @@
 }
 
 /* Background bead (Chart tab) */
+/* Wraps the chart's settings so work mode can switch them all off at once */
+.chart-settings {
+  min-width: 0;
+}
+
+.chart-settings:disabled {
+  opacity: 0.6;
+}
+
+.work-lock-note {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0 0 0.75rem;
+}
+
+.work-lock-note svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+}
+
 .background-bead {
   margin-top: 1.25rem;
   padding-top: 1rem;
