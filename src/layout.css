@@ -182,6 +182,11 @@
   overflow-wrap: anywhere;
 }
 
+.progress-reset {
+  margin-top: 1rem;
+  color: var(--muted-foreground);
+}
+
 .progress-color-unknown {
   color: var(--muted-foreground);
   font-style: italic;

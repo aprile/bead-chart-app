@@ -161,6 +161,44 @@ export function setupChartView(elements) {
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   }
 
+  // Scroll so the beads in `box` (from beadsBox() in grid.js) can be seen.
+  // Does nothing if they already can. Otherwise, along each direction: if
+  // they fit on screen, they're put in the middle; if they're longer than
+  // the screen (a long row), it only scrolls when none of them is showing,
+  // and then to their start. smooth: glide there instead of jumping.
+  function scrollToShow(box, { smooth = false } = {}) {
+    if (!layout) return;
+    const m = margins();
+    // Where the box is in the scrolling area (the spacer). Turned sideways,
+    // the chart's x runs down the screen and its y runs right to left.
+    const area = isSideways()
+      ? { left: m.left + layout.chartH - box.bottom, right: m.left + layout.chartH - box.top, top: box.left, bottom: box.right }
+      : { left: m.left + box.left, right: m.left + box.right, top: box.top, bottom: box.bottom };
+    // The part you can see, not counting the numbers.
+    const seen = {
+      left: viewport.scrollLeft + m.left,
+      right: viewport.scrollLeft + viewport.clientWidth,
+      top: viewport.scrollTop,
+      bottom: viewport.scrollTop + viewport.clientHeight - m.bottom,
+    };
+
+    // One direction at a time: returns the new scroll position (or the old one).
+    function along(start, end, seenStart, seenEnd, scroll) {
+      const room = seenEnd - seenStart;
+      if (end - start <= room) {
+        if (start >= seenStart && end <= seenEnd) return scroll; // already in view
+        return scroll + (start + end) / 2 - (seenStart + seenEnd) / 2; // put it in the middle
+      }
+      if (end > seenStart && start < seenEnd) return scroll; // partly in view: leave it
+      return scroll + start - seenStart; // show its start
+    }
+
+    const left = along(area.left, area.right, seen.left, seen.right, viewport.scrollLeft);
+    const top = along(area.top, area.bottom, seen.top, seen.bottom, viewport.scrollTop);
+    if (left === viewport.scrollLeft && top === viewport.scrollTop) return;
+    viewport.scrollTo({ left, top, behavior: smooth ? 'smooth' : 'auto' });
+  }
+
   // ---------- Controls ----------
 
   elements.zoomIn.addEventListener('click', () => zoomTo(scale * ZOOM_STEP));
@@ -235,5 +273,6 @@ export function setupChartView(elements) {
     scrollToStart() {
       viewport.scrollTo(0, 0);
     },
+    scrollToShow,
   };
 }

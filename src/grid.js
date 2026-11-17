@@ -576,6 +576,20 @@ function drawOutline(canvas, layout, cells, color) {
   ctx.restore();
 }
 
+// The box around some beads, in CSS pixels from the chart's top-left corner,
+// upright (chart space): { left, right, top, bottom }.
+export function beadsBox(layout, beads) {
+  const box = { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity };
+  for (const { row, col } of beads) {
+    const cell = cellPosition(layout, row, col);
+    box.left = Math.min(box.left, cell.x);
+    box.right = Math.max(box.right, cell.x + layout.beadW);
+    box.top = Math.min(box.top, cell.y);
+    box.bottom = Math.max(box.bottom, cell.y + layout.beadH);
+  }
+  return box;
+}
+
 // ---------- Working mode ----------
 
 const WORK_ROW_LINE = '#ea580c'; // orange, so it can't be mixed up with the blue selection

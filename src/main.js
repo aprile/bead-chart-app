@@ -158,6 +158,7 @@ function onModeChange(mode) {
     selection.clear();
   }
   redraw(); // the current row is only drawn while working
+  progress.reveal(); // scroll to the row I'm on (does nothing in draw mode)
 }
 
 // Working mode's progress panel and the current row on the chart.
@@ -226,6 +227,7 @@ function showOpenChart() {
   nameInput.value = current.name;
   chartView.scrollToStart(); // a different chart starts at the top left
   redraw();
+  progress.reveal(); // working: show the row I'm on instead
 }
 
 function openSavedChart(saved) {
@@ -475,3 +477,9 @@ views = setupViews((name) => {
 // setupViews() showed the first view before `views` was set, so redraw()
 // skipped drawing then. Draw now.
 redraw();
+progress.reveal(); // opened in work mode: show the row I'm on
+
+// Turning the chart sideways scrolls back to the start (chart-view.js);
+// while working, go back to the row I'm on. (This runs after chart-view's
+// own click handler, since it was added later.)
+document.querySelector('#turn-sideways').addEventListener('click', () => progress.reveal());

@@ -1,7 +1,8 @@
 // Working mode's progress: which row I'm on.
 // - The progress panel (left panel in work mode): "Rows 1 & 2 of 90", which
 //   way the row goes, Next row / Previous row (also ↑/↓ and space), and the
-//   row's colours in pick-up order ("3 × 401 Black").
+//   row's colours in pick-up order ("3 × 401 Black"), and Start again.
+// - The chart scrolls by itself to keep the current row in view.
 // - On the canvas: finished rows are faded, the current row is outlined.
 // - Clicking a bead (in work mode) makes its row the current row.
 //
@@ -10,7 +11,7 @@
 // The current row is saved with the chart (chart.js setProgress), not part of undo.
 
 import { getStitch } from './stitches/index.js';
-import { drawWorkRows } from './grid.js';
+import { drawWorkRows, beadsBox } from './grid.js';
 import { getChart, setProgress } from './chart.js';
 import { getColor, colorLabel } from './colors.js';
 
@@ -70,6 +71,7 @@ export function setupProgress(root, { chartView, isWorking, isActive }) {
   const directionText = root.querySelector('#progress-direction-text');
   const nextButton = root.querySelector('#progress-next');
   const previousButton = root.querySelector('#progress-previous');
+  const resetButton = root.querySelector('#progress-reset');
 
   // The working rows, worked out again only when the stitch or size changes.
   let cached = null;
@@ -122,6 +124,7 @@ export function setupProgress(root, { chartView, isWorking, isActive }) {
       directionText.textContent = DIRECTION_WORDS[dir];
     }
     previousButton.disabled = index === 0;
+    resetButton.disabled = index === 0;
     nextButton.disabled = index === workRows.length - 1;
     showColors(chart, workRow);
   }
@@ -144,7 +147,23 @@ export function setupProgress(root, { chartView, isWorking, isActive }) {
     setProgress(Math.min(Math.max(index, 0), count - 1));
     show();
     chartView.repaint();
+    reveal({ smooth: true });
   }
+
+  // Scroll the chart so the current row is in view (if it isn't already).
+  function reveal({ smooth = false } = {}) {
+    const chart = getChart();
+    const layout = chartView.getLayout();
+    if (!chart || !layout || !isWorking()) return;
+    const workRow = rowsOf(chart).workRows[currentIndex(chart)];
+    chartView.scrollToShow(beadsBox(layout, workRow.beads), { smooth });
+  }
+
+  // Start again: back to the first row, after asking.
+  resetButton.addEventListener('click', () => {
+    if (!confirm('Start again from the first row? Your rows done will be cleared.')) return;
+    goTo(0);
+  });
 
   const next = () => goTo(currentIndex(getChart()) + 1);
   const previous = () => goTo(currentIndex(getChart()) - 1);
@@ -177,6 +196,8 @@ export function setupProgress(root, { chartView, isWorking, isActive }) {
 
   return {
     show,
+    // Scroll the current row into view (on switching to work mode, or opening a chart).
+    reveal,
     // A click on bead (row, col) in work mode: start working on its row.
     jumpTo({ row, col }) {
       const chart = getChart();
