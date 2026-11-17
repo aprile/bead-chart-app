@@ -7,7 +7,7 @@ Builds on `PLAN.md` (v1). Everything there still applies unless this doc changes
 2. **New layout:** big canvas in the middle with collapsible side panels. **It also has to work on a phone or tablet.**
 3. **Design polish** with **Basecoat**, the shadcn/ui design system without React.
 4. **Single-file export/import:** one chart as `.json`, and a chart picture as `.png`. The full backup stays as it is.
-5. **Working mode:** switch between drawing and working. In working mode I mark my current row *and* the exact bead I'm on.
+5. **Working mode:** switch between drawing and working. In working mode I mark the row I'm on (row only, no bead marker; changed 2026-11-17).
 6. **Background bead**, set per chart (changed 2026-11-13 from a canvas colour, see section 6).
 7. **Marquee selection** with copy/paste, fill and erase (added 2026-11-13, see section 7).
 
@@ -39,7 +39,7 @@ The grid, painting, photo import and export then only talk to the module.
 | **Two-drop brick** | vertically | rows in pairs; each pair shifted ½ bead from the next | as brick | two rows at a time, pair by pair, alternating direction |
 | **Flat peyote** | horizontally | every other column shifted ½ bead up/down | **height** includes the ½-bead overhang | zig-zag rows (each row is every other bead), going up; rows 1 and 2 picked up together |
 
-- **Peyote even/odd count** is a setting on the chart. It doesn't change the drawing, only how the row ends work, so working mode shows the right turn at the end of each row.
+- **Peyote even/odd count** is worked out from the number of columns (decided 2026-11-17, no separate setting). It doesn't change the drawing, only how the row ends work, so working mode shows the right turn at the end of each row.
 - **Calibration** is saved per stitch, since each one comes out slightly differently. Square stitch starts from the loom values, and two-drop brick from the brick values.
 - **Photo import** works unchanged, since it only needs each bead's position from the stitch module.
 
@@ -135,24 +135,27 @@ Stays as in v1 (all charts + stash + custom colours + calibration), now with `ve
 
 The **Draw / Work** switch is in the top bar. In working mode, painting is switched off so I can't change the chart by accident.
 
+**Row only** (decided 2026-11-17): working mode tracks **which row I'm on**, not the bead within it. No bead marker.
+
 **On the canvas**
-- Work **always starts at the bottom-left bead** and goes up.
-- The **current row** is highlighted. Finished rows are dimmed, and rows still to do stay normal.
-- The **current bead** has a clear marker (ring or arrow), plus a small arrow showing which way the row goes.
-- Tapping any bead moves the marker there.
+- Work **always starts at the bottom row** and goes up.
+- The **current row** is highlighted, with a small arrow showing which way the row goes. Rows below it are done and dimmed; rows still to do stay normal.
+- Tapping any bead makes its row the current row.
 - The canvas scrolls by itself to keep the current row in view.
+- **Two-drop brick:** a working row is a pair of chart rows. The row indicator sits on the **top row** of the pair.
+- **Peyote:** a working row is a zig-zag row (every other bead); rows 1 and 2 are picked up together.
 
 **Progress panel** (left panel on desktop, bottom panel on phone)
-- "Row 12 of 90 · bead 7 of 15"
-- **The current row written out in order**, grouped by colour: e.g. `3 × 401 Black · 2 × 4201 Duracoat Silver · 5 × 401 Black`. The group I'm on is highlighted.
-- Buttons: **next bead / previous bead**, **next row / previous row**, **mark row done**.
-- **On a phone:** a large "next bead" button at thumb height, with the other buttons smaller next to it. Swiping on the panel also moves bead by bead.
-- Keyboard on desktop: arrow keys for bead/row, space for next bead.
-- For peyote it follows the zig-zag rows and shows the turn for even or odd count. For two-drop brick it moves two rows at a time.
+- "Row 12 of 90"
+- **The current row written out in pick-up order**, grouped by colour: e.g. `3 × 401 Black · 2 × 4201 Duracoat Silver · 5 × 401 Black`. On two-drop brick each stack is top bead first.
+- Buttons: **next row / previous row**.
+- **On a phone:** a large "next row" button at thumb height, with "previous row" smaller next to it. Swiping on the panel also moves row by row.
+- Keyboard on desktop: up/down arrows for row, space for next row.
+- For peyote it shows the turn at the row end for even or odd count (from the number of columns).
 - **Keep screen on** while in working mode (on browsers that support it), so the phone doesn't lock mid-row.
 
 **Saving**
-- Progress is saved **per chart** (row, bead, rows done) and comes back when I reopen the chart.
+- Progress is saved **per chart** (the current row) and comes back when I reopen the chart.
 - Progress isn't part of undo/redo.
 - **Reset progress** asks first.
 - If I go back to drawing mode and change the chart size, progress outside the new size is cleared.
@@ -180,11 +183,10 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
     version: 2,
     name,
     stitch: "loom" | "square" | "brick" | "brick2" | "peyote",
-    peyoteCount?: "even" | "odd",
     beadSize, widthMm, heightMm, cols, rows,
     beads: [[colorId | null, ...], ...],
     backgroundBead: colorId | null,       // was `background: "#f5f1ea"` (never used); upgraded on load
-    progress?: { step, doneRows: [..] }   // step = position in the stitch's reading order
+    progress?: { row }                    // row = current working row (0 = first), counted in the stitch's working rows (two-drop: pairs)
   }
   ```
 - **Single chart file:** `{ type: "bead-chart", version: 2, chart, customColors: [...], hexOverrides: { id: hex } }`
@@ -199,7 +201,7 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
 5. ~~Background colour~~ (done early as the background bead, see section 6).
 6. **Single chart export/import** (.json), including the custom colour merge rules and the share sheet.
 7. **PNG export** with the optional colour key.
-8. **Working mode:** switch, row/bead marker, progress panel, phone controls, keyboard shortcuts, keep screen on, saved progress, peyote and two-drop rows.
+8. **Working mode:** switch, current-row highlight, progress panel, phone controls, keyboard shortcuts, keep screen on, saved progress, peyote and two-drop rows.
 9. **Polish:** empty states, tooltips on tools, dark mode check, a final visual pass.
 
 ## Not in v2
@@ -233,5 +235,5 @@ The **Draw / Work** switch is in the top bar. In working mode, painting is switc
   - Next: **milestone 8**, working mode. Needs the two open questions below answered first.
 
 ## Open questions
-- **Peyote even/odd count:** is it just whether the column count is even or odd? If so, work it out from `cols` instead of a separate `peyoteCount` setting. Needed by milestone 8 (working mode).
-- **Two-drop brick pick-up order** (milestone 8): assumed the top bead of each stacked pair is picked up first.
+- ~~**Peyote even/odd count**~~ (answered 2026-11-17): yes, it's whether the column count is even or odd. Worked out from `cols`; no `peyoteCount` setting.
+- ~~**Two-drop brick pick-up order**~~ (answered 2026-11-17): the **top bead of each stacked pair goes on the needle first** (as `brick2.js` already has it). In working mode the row indicator for a pair sits on the **top row** of the pair.
