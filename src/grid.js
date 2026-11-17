@@ -164,8 +164,10 @@ function drawGridLines(ctx, layout, { firstRow, lastRow, firstCol, lastCol }) {
 
   const lines = new Path2D();
   for (let col = firstCol; col <= lastCol + 1; col++) {
-    // the line on the left of column `col`, i.e. after `col` columns
-    if (!isTenth(col)) continue;
+    // the line on the left of column `col`, i.e. after `col` columns.
+    // Turned sideways, columns are numbered from the other side (the bottom
+    // of the screen), so the lines are counted from there too.
+    if (!isTenth(layout.rotated ? layout.cols - col : col)) continue;
     const x = snapX(layout, originX + col * beadW);
     lines.moveTo(x, top);
     lines.lineTo(x, bottom);
@@ -356,7 +358,9 @@ export function drawChart(canvas, chart, layout, cssWidth, cssHeight, { ratio = 
 // Numbers start at the BOTTOM LEFT: row 1 is the bottom row, column 1 the
 // left column. Upright, row numbers run down the left edge and column numbers
 // along the bottom. Turned sideways, it's the other way round: row numbers
-// along the bottom (row 1 on the left), column numbers down the left edge.
+// along the bottom (row 1 on the left), and the side counts columns from the
+// BOTTOM of the screen, so the numbering still starts bottom left. (That's
+// the chart's last column, so on a 15-column chart, column 1 is labelled 15.)
 // They stay at the edges while you scroll, and are drawn in screen space so
 // the text is always upright.
 function drawNumbers(ctx, layout) {
@@ -381,7 +385,10 @@ function drawNumbers(ctx, layout) {
     return chartToScreen(layout, originX + cell.x + beadW / 2, originY + cell.y + beadH / 2);
   };
   const columns = [];
-  for (let col = firstCol; col <= lastCol; col++) columns.push({ number: col + 1, at: middle(bottomRow, col) });
+  const cols = layout.cols;
+  for (let col = firstCol; col <= lastCol; col++) {
+    columns.push({ number: layout.rotated ? cols - col : col + 1, at: middle(bottomRow, col) });
+  }
   const rowNumbers = [];
   for (let row = firstRow; row <= lastRow; row++) rowNumbers.push({ number: rows - row, at: middle(row, 0) });
 
