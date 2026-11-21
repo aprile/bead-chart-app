@@ -899,6 +899,20 @@
 .crop-handle[data-corner='sw'] { bottom: -2px; left: -2px; cursor: nesw-resize; }
 .crop-handle[data-corner='se'] { bottom: -2px; right: -2px; cursor: nwse-resize; }
 
+/* Following a grid in the picture: show the squares the box snaps to.
+   The square size is set by photo.js (background-size). */
+.crop-box.on-grid {
+  background-image:
+    linear-gradient(to right, rgb(236 72 153 / 0.55) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(236 72 153 / 0.55) 1px, transparent 1px);
+  background-origin: border-box; /* start at the box's outer edge, which sits on a grid line */
+}
+
+.photo-grid:not([hidden]) {
+  display: grid;
+  gap: 0.25rem;
+}
+
 /* While picking the background, clicks go through the crop box to the photo */
 .photo-stage.picking .crop-box {
   pointer-events: none;

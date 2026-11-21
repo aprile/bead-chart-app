@@ -82,9 +82,12 @@ export function pickColorAt(photo, x, y) {
 // Returns chart.rows rows of chart.cols [r, g, b] colours: each bead's
 // MOST COMMON colour, so a bead on an edge between two colours gets one of
 // them, not a muddy mix.
-export function sampleBeadColors(photo, crop, chart) {
-  const { across, down } = chartShape(chart);
+// plainGrid: the crop is a grid of chart.cols × chart.rows squares (found in
+// the picture), and each square is one bead, so the stitch's offsets are left out.
+export function sampleBeadColors(photo, crop, chart, { plainGrid = false } = {}) {
+  const { across, down } = plainGrid ? { across: chart.cols, down: chart.rows } : chartShape(chart);
   const stitch = getStitch(chart.stitch);
+  const noOffset = { x: 0, y: 0 };
 
   // Shrink the crop so each bead covers exactly K × K pixels. K is even, so a
   // half-bead offset is a whole number of pixels and lines up exactly with the grid.
@@ -113,7 +116,7 @@ export function sampleBeadColors(photo, crop, chart) {
   for (let row = 0; row < chart.rows; row++) {
     const beadRow = [];
     for (let col = 0; col < chart.cols; col++) {
-      const offset = stitch.cellOffset(row, col, chart); // same offset as the grid drawing
+      const offset = plainGrid ? noOffset : stitch.cellOffset(row, col, chart); // same offset as the grid drawing
       const left = Math.round((col + offset.x) * K) + inset;
       const top = Math.round((row + offset.y) * K) + inset;
       let n = 0;

@@ -8,8 +8,13 @@
 //
 // The colours come from my stash, or (with "Only colours in my stash" off)
 // from every colour made in the chart's bead size.
+//
+// If the picture has grid lines (a chart saved as an image, pixel art),
+// "Follow the grid in the picture" is on: the box fits the grid, snaps to
+// whole squares, and each square becomes one bead.
 
 import { preparePhoto, sampleBeadColors, chartShape, adjustColor, pickColorAt } from './photo-sampling.js';
+import { findGrid } from './grid-detect.js';
 import { createColorMatcher, chooseColors } from './color-match.js';
 import { rgbToLab, rgbToHex } from './color-math.js';
 import { stashColors, allColors, sortByFamily, getColor, colorLabel } from './colors.js';
@@ -37,6 +42,8 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   const backgroundSwatch = dialog.querySelector('.background-swatch');
   const pickingNote = dialog.querySelector('.picking-note');
   const sizeNote = dialog.querySelector('.photo-size-note');
+  const gridPanel = dialog.querySelector('.photo-grid');
+  const gridNote = dialog.querySelector('.photo-grid-note');
 
   let photo = null; // the shrunk photo (a canvas), shown in the stage
   let chart = null; // the open chart, when the dialog was opened
@@ -45,6 +52,8 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   let size = null; // { cols, rows }: the chart size under Size (starts at the chart's own)
   let aspect = 1; // crop box width ÷ height (the real shape of that size)
   let box = null; // crop box { x, y, w, h } in photo pixels
+  let grid = null; // the grid found in the picture (see grid-detect.js), or null
+  let gridBox = null; // with the grid followed: the box's edges as line numbers { c0, c1, r0, r1 }
 
   let sampled = null; // step 1 result: rows of [r, g, b], one per bead
   let beads = null; // step 2 result: rows of colour ids (or null), ready to apply
@@ -92,15 +101,25 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   });
 
   function open() {
+    // Grid lines in the picture? Then follow them to start with.
+    grid = findGrid(photo);
+    gridPanel.hidden = !grid;
+    fields.useGrid.checked = grid !== null;
+    if (grid) gridNote.textContent = `Found ${grid.x.count} × ${grid.y.count} squares. Each square becomes one bead.`;
+
     size = { cols: chart.cols, rows: chart.rows };
     fields.photoCols.value = size.cols;
     fields.photoRows.value = size.rows;
-    showSize();
-
-    // Start with the biggest box that fits, in the middle of the photo.
-    const w = Math.min(photo.width, photo.height * aspect);
-    const h = w / aspect;
-    box = { x: (photo.width - w) / 2, y: (photo.height - h) / 2, w, h };
+    if (onGrid()) {
+      useWholeGrid();
+    } else {
+      showSize();
+      // Start with the biggest box that fits, in the middle of the photo.
+      const w = Math.min(photo.width, photo.height * aspect);
+      const h = w / aspect;
+      box = { x: (photo.width - w) / 2, y: (photo.height - h) / 2, w, h };
+    }
+    showGridMode();
 
     // New photo: forget the last photo's colour choices and background.
     // (The slider positions are kept.)
@@ -141,7 +160,7 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   // Show the finished size, and work out the crop box's shape from it.
   function showSize() {
     const shape = chartShape(target());
-    aspect = shape.aspect;
+    if (!onGrid()) aspect = shape.aspect; // on the grid, the squares set the box's shape
     const finished = `${formatLength(shape.widthMm, 'cm')} × ${formatLength(shape.heightMm, 'cm')}`;
     shapeText.textContent = finished;
     sizeNote.classList.remove('error');
@@ -173,6 +192,7 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
       sizeNote.classList.add('error');
       return; // keep the last good size
     }
+    if (onGrid()) return changeGridSize(changed, value);
     size = { ...size, [changed]: value };
     if (fields.keepShape.checked) {
       const other = changed === 'cols' ? 'rows' : 'cols';
@@ -200,6 +220,113 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     renderBox();
   }
 
+  // ---------- Following the grid in the picture ----------
+
+  function onGrid() {
+    return grid !== null && fields.useGrid.checked;
+  }
+
+  // The lowest and highest line numbers that are still inside the photo
+  // (line 0 is the grid's first line; the lines carry on past the grid).
+  function lineRange(lines, photoSize) {
+    return {
+      min: Math.ceil((-0.5 - lines.start) / lines.pitch),
+      max: Math.floor((photoSize + 0.5 - lines.start) / lines.pitch),
+    };
+  }
+
+  // Put the box on the grid lines in gridBox, and make the size match its squares.
+  function applyGridBox() {
+    const { c0, c1, r0, r1 } = gridBox;
+    box = {
+      x: grid.x.start + c0 * grid.x.pitch,
+      y: grid.y.start + r0 * grid.y.pitch,
+      w: (c1 - c0) * grid.x.pitch,
+      h: (r1 - r0) * grid.y.pitch,
+    };
+    aspect = box.w / box.h;
+    size = { cols: c1 - c0, rows: r1 - r0 };
+    // Only change the boxes when they're different, so typing isn't interrupted.
+    if (Number(fields.photoCols.value) !== size.cols) fields.photoCols.value = size.cols;
+    if (Number(fields.photoRows.value) !== size.rows) fields.photoRows.value = size.rows;
+    showSize();
+    renderBox();
+  }
+
+  // The box around the whole grid that was found.
+  function useWholeGrid() {
+    gridBox = {
+      c0: 0,
+      c1: Math.min(grid.x.count, MAX_BEADS),
+      r0: Math.max(0, grid.y.count - MAX_BEADS), // a very tall grid keeps its bottom rows
+      r1: grid.y.count,
+    };
+    applyGridBox();
+  }
+
+  // Typing Columns or Rows on the grid: the box becomes that many squares,
+  // keeping its bottom-left corner (where the work starts) if there's room.
+  function changeGridSize(changed, value) {
+    const { c0, r1 } = gridBox;
+    if (changed === 'cols') {
+      const { min, max } = lineRange(grid.x, photo.width);
+      const right = Math.min(c0 + value, max);
+      gridBox = { ...gridBox, c0: Math.max(min, right - value), c1: right };
+    } else {
+      const { min, max } = lineRange(grid.y, photo.height);
+      const top = Math.max(min, r1 - value);
+      gridBox = { ...gridBox, r0: top, r1: Math.min(max, top + value) };
+    }
+    applyGridBox();
+    scheduleUpdate(true);
+  }
+
+  // Dragging on the grid: the box moves by whole squares, and a corner
+  // drag moves those two edges to the nearest lines (any shape).
+  function dragOnGrid(point) {
+    const start = drag.startGridBox;
+    const xs = lineRange(grid.x, photo.width);
+    const ys = lineRange(grid.y, photo.height);
+    const lineX = Math.round((point.x - grid.x.start) / grid.x.pitch);
+    const lineY = Math.round((point.y - grid.y.start) / grid.y.pitch);
+    let next;
+    if (!drag.corner) {
+      const dc = clamp(Math.round((point.x - drag.startPoint.x) / grid.x.pitch), xs.min - start.c0, xs.max - start.c1);
+      const dr = clamp(Math.round((point.y - drag.startPoint.y) / grid.y.pitch), ys.min - start.r0, ys.max - start.r1);
+      next = { c0: start.c0 + dc, c1: start.c1 + dc, r0: start.r0 + dr, r1: start.r1 + dr };
+    } else {
+      next = { ...start };
+      if (drag.corner.includes('w')) next.c0 = clamp(lineX, Math.max(xs.min, start.c1 - MAX_BEADS), start.c1 - 1);
+      else next.c1 = clamp(lineX, start.c0 + 1, Math.min(xs.max, start.c0 + MAX_BEADS));
+      if (drag.corner.includes('n')) next.r0 = clamp(lineY, Math.max(ys.min, start.r1 - MAX_BEADS), start.r1 - 1);
+      else next.r1 = clamp(lineY, start.r0 + 1, Math.min(ys.max, start.r0 + MAX_BEADS));
+    }
+    const changed = Object.keys(next).some((key) => next[key] !== gridBox[key]);
+    if (!changed) return false;
+    gridBox = next;
+    applyGridBox();
+    return true;
+  }
+
+  // The switch: on = back to the whole grid; off = a normal photo box with
+  // the chart's shape, about the same size and place.
+  function toggleGrid() {
+    if (onGrid()) {
+      useWholeGrid();
+    } else {
+      showSize(); // works out the chart's shape again
+      reshapeBox();
+    }
+    showGridMode();
+    scheduleUpdate(true);
+  }
+
+  // On the grid, the squares set the shape, so "Keep the box's shape" doesn't apply.
+  function showGridMode() {
+    fields.keepShape.disabled = onGrid();
+    cropBox.classList.toggle('on-grid', onGrid());
+  }
+
   // ---------- Crop box ----------
 
   // How many screen pixels one photo pixel takes up right now.
@@ -213,6 +340,8 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     cropBox.style.top = `${box.y * scale}px`;
     cropBox.style.width = `${box.w * scale}px`;
     cropBox.style.height = `${box.h * scale}px`;
+    // On the grid, faint lines show the squares (one per bead).
+    cropBox.style.backgroundSize = onGrid() ? `${grid.x.pitch * scale}px ${grid.y.pitch * scale}px` : '';
   }
 
   // Pointer position in photo pixels.
@@ -249,12 +378,21 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     event.preventDefault();
     cropBox.setPointerCapture(event.pointerId);
     const handle = event.target.closest('.crop-handle');
-    drag = { corner: handle?.dataset.corner ?? null, startPoint: pointInPhoto(event), startBox: { ...box } };
+    drag = {
+      corner: handle?.dataset.corner ?? null,
+      startPoint: pointInPhoto(event),
+      startBox: { ...box },
+      startGridBox: gridBox && { ...gridBox },
+    };
   });
 
   cropBox.addEventListener('pointermove', (event) => {
     if (!drag) return;
     const point = pointInPhoto(event);
+    if (onGrid()) {
+      if (dragOnGrid(point) && !slow) scheduleUpdate(true);
+      return;
+    }
     if (drag.corner) {
       box = resizeFrom(drag.corner, drag.startBox, point);
     } else {
@@ -330,6 +468,7 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     if (event.target === fields.photoCols) return changeSize('cols');
     if (event.target === fields.photoRows) return changeSize('rows');
     if (event.target === fields.keepShape) return; // only matters when typing a size
+    if (event.target === fields.useGrid) return toggleGrid();
     if (event.target === fields.onlyStash && fields.onlyStash.checked) {
       // Back to my stash only: forget colours I locked or swapped in from outside it.
       const inStash = new Set(stash.map((color) => color.id));
@@ -443,7 +582,7 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     // Step 1 (only when the crop box moved): each bead's most common colour.
     if (resample || !sampled) {
       const started = performance.now();
-      sampled = sampleBeadColors(photo, box, target());
+      sampled = sampleBeadColors(photo, box, target(), { plainGrid: onGrid() });
       // If this took longer than ~1/25 s, wait until you let go of the box next time.
       slow = performance.now() - started > 40;
     }

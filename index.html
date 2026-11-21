@@ -386,8 +386,9 @@
           <p>
             Drag the box to move it, or drag a corner to resize it. It has the shape of the
             chart size under Size (<span class="photo-shape"></span>): more columns and rows
-            give more detail. Apply replaces all the beads in the chart (and its size), and
-            you can undo it.
+            give more detail. If the picture has grid lines, the box fits the grid instead
+            and each square becomes one bead. Apply replaces all the beads in the chart (and
+            its size), and you can undo it.
           </p>
         </header>
 
@@ -416,6 +417,14 @@
                  Apply changes the chart to it. -->
             <fieldset class="photo-group">
               <legend>Size</legend>
+              <!-- Only shown when the picture has grid lines (src/grid-detect.js) -->
+              <div class="photo-grid" hidden>
+                <label class="label photo-switch" title="Turn off to treat the picture like a photo (the box keeps the chart's shape)">
+                  <input type="checkbox" role="switch" class="input" name="useGrid" />
+                  Follow the grid in the picture
+                </label>
+                <p class="photo-hint photo-grid-note"></p>
+              </div>
               <div class="photo-size-row">
                 <div class="field">
                   <label for="photo-cols">Columns</label>
