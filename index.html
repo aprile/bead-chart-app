@@ -320,6 +320,16 @@
                 <h2 class="panel-heading">View</h2>
                 <label class="label"><input type="checkbox" role="switch" class="input" id="show-grid-lines" /> Lines every 10 beads</label>
                 <label class="label"><input type="checkbox" role="switch" class="input" id="show-numbers" /> Row &amp; column numbers</label>
+                <!-- The picture the chart was made from, under see-through beads (src/chart-picture.js) -->
+                <label class="label"><input type="checkbox" role="switch" class="input" id="show-picture" /> Picture under beads</label>
+                <p class="panel-hint" id="picture-hint">Import a photo into this chart to show it under the beads.</p>
+                <div class="picture-options" id="picture-options" hidden>
+                  <div class="field">
+                    <label class="slider-label" for="bead-opacity">Bead opacity <output id="bead-opacity-value">50%</output></label>
+                    <input type="range" class="input" id="bead-opacity" min="10" max="100" step="5" value="50" />
+                  </div>
+                  <button type="button" class="btn" data-variant="outline" data-size="sm" id="remove-picture">Remove picture</button>
+                </div>
               </section>
             </div>
           </div>
@@ -386,8 +396,9 @@
           <p>
             Drag the box to move it, or drag a corner to resize it. It has the shape of the
             chart size under Size (<span class="photo-shape"></span>): more columns and rows
-            give more detail. If the picture has grid lines, the box fits the grid instead
-            and each square becomes one bead. Apply replaces all the beads in the chart (and
+            give more detail. Turn off "Keep the box's shape" to drag it into any shape. If the
+            picture has grid lines, the box fits the grid instead and each square becomes one
+            bead (stretched to the beads' shape, if you like). Apply replaces all the beads in the chart (and
             its size), and you can undo it.
           </p>
         </header>
@@ -424,6 +435,11 @@
                   Follow the grid in the picture
                 </label>
                 <p class="photo-hint photo-grid-note"></p>
+                <label class="label photo-switch" title="Repeats some columns (or rows) so the picture keeps its shape in these beads">
+                  <input type="checkbox" role="switch" class="input" name="stretchToBeads" />
+                  Stretch to the beads' shape
+                </label>
+                <p class="photo-hint photo-stretch-note"></p>
               </div>
               <div class="photo-size-row">
                 <div class="field">
@@ -435,7 +451,7 @@
                   <input type="number" id="photo-rows" class="input" name="photoRows" min="1" max="1000" step="1" inputmode="numeric" />
                 </div>
               </div>
-              <label class="label photo-switch" title="Turn off to set columns and rows separately (the box changes shape)">
+              <label class="label photo-switch" title="Turn off to drag the box into any shape (the rows follow), or to set columns and rows separately">
                 <input type="checkbox" role="switch" class="input" name="keepShape" checked />
                 Keep the box's shape
               </label>

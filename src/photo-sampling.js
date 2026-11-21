@@ -169,6 +169,20 @@ function mostCommonColor(area, counts, labs, pixels) {
   return [Math.round(r / bestCount), Math.round(g / bestCount), Math.round(b / bestCount)];
 }
 
+// Stretch rows of colours (one per square) to cols × rows beads by repeating
+// squares, spread evenly: like adding a column (or row) in between by hand.
+// Each bead takes the colour of the square it falls in, so colours stay crisp.
+// (Fewer beads than squares works too: then some squares are skipped.)
+export function stretchColors(colors, cols, rows) {
+  const fromRows = colors.length;
+  const fromCols = colors[0].length;
+  const source = (i, from, to) => Math.min(from - 1, Math.floor(((i + 0.5) * from) / to));
+  return Array.from({ length: rows }, (_, row) => {
+    const sourceRow = colors[source(row, fromRows, rows)];
+    return Array.from({ length: cols }, (_, col) => sourceRow[source(col, fromCols, cols)]);
+  });
+}
+
 // ---------- Adjusting colours ----------
 
 const clamp255 = (value) => Math.min(255, Math.max(0, Math.round(value)));

@@ -606,6 +606,16 @@
   color: var(--muted-foreground);
 }
 
+/* Bead opacity + Remove picture, shown while the picture is on */
+.picture-options:not([hidden]) {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.picture-options > .btn {
+  justify-self: start;
+}
+
 /* ---------- Other screens (v1 design for now) ---------- */
 
 .pages {

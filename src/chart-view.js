@@ -9,6 +9,7 @@
 import { autoScale, fitScale, makeLayout, drawChart, chartSizeMm } from './grid.js';
 import { getStitch } from './stitches/index.js';
 import { load, save, STORAGE_KEYS } from './storage.js';
+import { getChartPicture, hasChartPicture, removeChartPicture } from './chart-picture.js';
 
 const ZOOM_STEP = 1.25; // each + or − button press
 const MIN_BEAD_PX = 3; // smallest/biggest bead when zooming (shorter side)
@@ -17,9 +18,11 @@ const NUMBERS_SPACE = { left: 36, bottom: 22 }; // room for row numbers (left) a
 const EDGE_SPACE = 16; // space around the chart when it fits in the box
 
 // Saved shape: { zoom: null | "fit" | pixels per mm, gridLines: false, numbers: false,
-//                sideways: { chartId: true, ... } }
+//                sideways: { chartId: true, ... }, picture: false, beadOpacity: 50 }
 // zoom null = the starting size; "fit" = always fit the whole chart.
 // sideways: the charts shown turned sideways (row 1 on the left).
+// picture: show the chart's picture under the beads (if it has one);
+// beadOpacity: how solid the beads are then, 10–100 (%).
 function loadView() {
   const saved = load(STORAGE_KEYS.view);
   const zoom = saved?.zoom;
@@ -29,12 +32,15 @@ function loadView() {
     gridLines: saved?.gridLines ?? false,
     numbers: saved?.numbers ?? false,
     sideways: sideways && typeof sideways === 'object' && !Array.isArray(sideways) ? sideways : {},
+    picture: saved?.picture ?? false,
+    beadOpacity: clamp(Number(saved?.beadOpacity) || 50, 10, 100),
   };
 }
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-// elements = { viewport, spacer, canvas, zoomIn, zoomOut, fit, zoomLabel, sideways, gridLines, numbers }
+// elements = { viewport, spacer, canvas, zoomIn, zoomOut, fit, zoomLabel, sideways, gridLines, numbers,
+//              picture, pictureOptions, beadOpacity, beadOpacityValue, removePicture, pictureHint }
 export function setupChartView(elements) {
   const { viewport, spacer, canvas } = elements;
   const view = loadView();
@@ -119,6 +125,9 @@ export function setupChartView(elements) {
       clipBottom: m.bottom,
       gridLines: view.gridLines,
       numbers: view.numbers,
+      // Still loading the first time: paint again once it's ready.
+      picture: view.picture ? getChartPicture(chart.id, paint) : null,
+      beadOpacity: view.beadOpacity / 100,
     });
     const width = Math.min(viewport.clientWidth, content.width);
     const height = Math.min(viewport.clientHeight, content.height);
@@ -136,6 +145,15 @@ export function setupChartView(elements) {
     elements.gridLines.checked = view.gridLines && stitch.gridLines;
     elements.gridLines.parentElement.title = stitch.gridLines ? '' : `These lines aren't available for ${stitch.label.toLowerCase()}`;
     elements.numbers.checked = view.numbers;
+    // The picture under the beads: only for charts made from a photo.
+    const hasPicture = hasChartPicture(chart.id);
+    elements.picture.disabled = !hasPicture;
+    elements.picture.checked = view.picture && hasPicture;
+    elements.pictureOptions.hidden = !(view.picture && hasPicture);
+    elements.pictureHint.hidden = hasPicture;
+    elements.beadOpacity.value = view.beadOpacity;
+    elements.beadOpacityValue.textContent = `${view.beadOpacity}%`;
+    elements.beadOpacity.dispatchEvent(new Event('input')); // so Basecoat fills the slider's track
     elements.fit.setAttribute('aria-pressed', view.zoom === 'fit');
     elements.sideways.setAttribute('aria-pressed', isSideways());
   }
@@ -221,6 +239,23 @@ export function setupChartView(elements) {
     view.gridLines = elements.gridLines.checked;
     saveView();
     paint();
+  });
+  elements.picture.addEventListener('change', () => {
+    view.picture = elements.picture.checked;
+    saveView();
+    render();
+  });
+  elements.beadOpacity.addEventListener('input', (event) => {
+    if (!event.isTrusted) return; // our own nudge for Basecoat (above), not a real slide
+    view.beadOpacity = Number(elements.beadOpacity.value);
+    elements.beadOpacityValue.textContent = `${view.beadOpacity}%`;
+    saveView();
+    paint();
+  });
+  elements.removePicture.addEventListener('click', () => {
+    if (!confirm('Remove the picture from this chart? The beads stay as they are.')) return;
+    removeChartPicture(chart.id);
+    render();
   });
   elements.numbers.addEventListener('change', () => {
     view.numbers = elements.numbers.checked;

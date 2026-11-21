@@ -31,6 +31,7 @@ import { countMissingBeads, getColor, colorLabel } from './colors.js';
 import { loadSavedChart, listSavedCharts, getCurrentChartId, setCurrentChartId, saveChart, deleteSavedChart } from './storage.js';
 import { setupAutosave, saveCurrentChart, flushSave, cancelPendingSave } from './autosave.js';
 import * as chart from './chart.js';
+import { setChartPicture, copyChartPicture } from './chart-picture.js';
 
 showIcons();
 // The canvas colours (numbers, background) follow dark mode, but need a redraw.
@@ -61,6 +62,12 @@ const chartView = setupChartView({
   sideways: document.querySelector('#turn-sideways'),
   gridLines: document.querySelector('#show-grid-lines'),
   numbers: document.querySelector('#show-numbers'),
+  picture: document.querySelector('#show-picture'),
+  pictureOptions: document.querySelector('#picture-options'),
+  pictureHint: document.querySelector('#picture-hint'),
+  beadOpacity: document.querySelector('#bead-opacity'),
+  beadOpacityValue: document.querySelector('#bead-opacity-value'),
+  removePicture: document.querySelector('#remove-picture'),
 });
 
 let views = null; // set up at the bottom, once the chart exists
@@ -317,6 +324,7 @@ setupChartMenu(document.querySelector('#chart-menu'), {
         alert(STORAGE_FULL);
         return;
       }
+      copyChartPicture(current.id, copy.id); // the picture under the beads, if it has one
       openSavedChart(copy);
       location.hash = '#chart';
       focusName();
@@ -389,9 +397,13 @@ setupPhotoImport({
   button: document.querySelector('#photo-button'),
   fileInput: document.querySelector('#photo-file'),
   getChart: chart.getChart,
-  onApply(beads) {
+  onApply(beads, size, picture) {
     selection.cancelPaste();
     chart.setAllBeads(beads); // the photo's size may be different: the chart takes it
+    // Keep the photo, to show under the beads ("Picture under beads" in the Chart tab).
+    if (!setChartPicture(chart.getChart().id, picture.source, picture.crop, picture)) {
+      alert("Couldn't keep the photo to show under the beads: the browser's storage is full. The beads were still made.");
+    }
     panel.showChart(chart.getChart()); // so the Chart tab shows the new size
     redraw();
     // The photo may have used colours that aren't in my stash: offer to add them.

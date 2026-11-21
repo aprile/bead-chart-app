@@ -69,7 +69,13 @@ export function autoScale(chart, availWidth, availHeight) {
 // see it (it moves as you scroll). rotated: shown turned sideways.
 // clipX: beads are hidden left of this; clipBottom: hidden in this many pixels
 // at the bottom (that's where the row and column numbers go).
-export function makeLayout(chart, scale, { screenX, screenY, rotated, clipX, clipBottom, gridLines, numbers }) {
+// picture: { image, across, down } to draw under the beads (chart-picture.js),
+// with the beads see-through (beadOpacity, 0–1). Leave out for none.
+export function makeLayout(
+  chart,
+  scale,
+  { screenX, screenY, rotated, clipX, clipBottom, gridLines, numbers, picture = null, beadOpacity = 1 },
+) {
   const { columnWidth, rowHeight, stitch, widthMm, heightMm } = chartSizeMm(chart);
   const beadW = columnWidth * scale;
   const beadH = rowHeight * scale;
@@ -93,6 +99,8 @@ export function makeLayout(chart, scale, { screenX, screenY, rotated, clipX, cli
     clipBottom,
     numbers,
     emptyFill: emptyFillOf(chart),
+    picture: picture?.image ? picture : null,
+    beadOpacity: picture?.image ? beadOpacity : 1,
     gridLines: gridLines && stitch.gridLines, // lines between rows and columns, if the stitch has them
     gap: smaller < 6 ? 0 : Math.max(1, smaller * 0.08), // small gap between beads
     radius: smaller * 0.35, // rounded corners
@@ -189,6 +197,14 @@ function drawGridLines(ctx, layout, { firstRow, lastRow, firstCol, lastCol }) {
 function isDark(hex) {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
   return 0.299 * r + 0.587 * g + 0.114 * b < 0.4;
+}
+
+// The picture under the beads, from the chart's bottom-left corner (chart space).
+function drawPicture(ctx, layout) {
+  const { image, across, down } = layout.picture;
+  const width = across * layout.beadW;
+  const height = down * layout.beadH;
+  ctx.drawImage(image, layout.originX, layout.originY + layout.chartH - height, width, height);
 }
 
 // ---------- Turning sideways ----------
@@ -343,10 +359,13 @@ export function drawChart(canvas, chart, layout, cssWidth, cssHeight, { ratio = 
       if (isMissingColor(colorId)) addMissingMark(missingMarks, layout, row, col);
     }
   }
+  if (layout.picture) drawPicture(ctx, layout);
+  ctx.globalAlpha = layout.beadOpacity; // see-through beads, over the picture
   for (const [fill, shape] of shapes) {
     ctx.fillStyle = fill;
     ctx.fill(shape);
   }
+  ctx.globalAlpha = 1;
   if (layout.gridLines) drawGridLines(ctx, layout, visibleRange(layout));
   strokeMissingMarks(ctx, missingMarks);
   ctx.restore();
@@ -436,11 +455,22 @@ export function drawBead(canvas, layout, row, col, colorId) {
   useChartSpace(ctx, layout);
   const cell = cellPosition(layout, row, col);
   ctx.clearRect(layout.originX + cell.x, layout.originY + cell.y, layout.beadW, layout.beadH);
+  // Clearing also wiped the picture there: put that bit back.
+  if (layout.picture) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(layout.originX + cell.x, layout.originY + cell.y, layout.beadW, layout.beadH);
+    ctx.clip();
+    drawPicture(ctx, layout);
+    ctx.restore();
+  }
 
   const shape = new Path2D();
   addBeadShape(shape, layout, row, col);
   ctx.fillStyle = fillFor(colorId, layout.emptyFill);
+  ctx.globalAlpha = layout.beadOpacity;
   ctx.fill(shape);
+  ctx.globalAlpha = 1;
   // Clearing the cell also wiped half of its grid lines: draw them again.
   if (layout.gridLines) drawGridLines(ctx, layout, { firstRow: row, lastRow: row, firstCol: col, lastCol: col });
   if (isMissingColor(colorId)) {

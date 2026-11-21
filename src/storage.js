@@ -8,6 +8,9 @@ import { countBeadsOf, replaceColorIn } from './chart-colors.js';
 // All localStorage keys start with this, so they don't mix with anything else.
 const PREFIX = 'bead-chart-app.';
 const CHART_PREFIX = `${PREFIX}chart.`; // one key per chart: bead-chart-app.chart.<id>
+// The picture under a chart's beads (chart-picture.js), kept apart from the
+// chart because it's big: bead-chart-app.picture.<id>. Not in backups.
+const PICTURE_PREFIX = `${PREFIX}picture.`;
 
 export const STORAGE_KEYS = {
   stash: `${PREFIX}stash`,
@@ -164,8 +167,28 @@ export function saveChart(chart) {
 export function deleteSavedChart(id) {
   try {
     localStorage.removeItem(CHART_PREFIX + id);
+    localStorage.removeItem(PICTURE_PREFIX + id);
   } catch (error) {
     console.warn('Could not delete chart:', error);
+  }
+}
+
+// ---------- The picture under a chart's beads ----------
+
+export function loadChartPicture(id) {
+  return load(PICTURE_PREFIX + id);
+}
+
+// Returns false if it couldn't be saved (e.g. storage full).
+export function saveChartPicture(id, picture) {
+  return save(PICTURE_PREFIX + id, picture);
+}
+
+export function deleteChartPicture(id) {
+  try {
+    localStorage.removeItem(PICTURE_PREFIX + id);
+  } catch (error) {
+    console.warn('Could not delete the picture:', error);
   }
 }
 
@@ -294,7 +317,11 @@ const KEPT_ON_IMPORT = [STORAGE_KEYS.lastChoices, STORAGE_KEYS.view, STORAGE_KEY
 // Replace all my data with a (checked) backup. Returns true if it worked.
 // If it fails halfway (e.g. storage full), the old data is put back.
 export function restoreBackup(data) {
-  const keysToReplace = allKeys().filter((key) => key.startsWith(PREFIX) && !KEPT_ON_IMPORT.includes(key));
+  // Pictures aren't in backups: keep the ones for charts that are in this backup.
+  const keptPictures = new Set(data.charts.map((chart) => PICTURE_PREFIX + chart.id));
+  const keysToReplace = allKeys().filter(
+    (key) => key.startsWith(PREFIX) && !KEPT_ON_IMPORT.includes(key) && !keptPictures.has(key),
+  );
   const oldValues = keysToReplace.map((key) => [key, localStorage.getItem(key)]);
 
   try {
@@ -315,7 +342,7 @@ export function restoreBackup(data) {
     console.warn('Import failed, putting the old data back:', error);
     try {
       allKeys()
-        .filter((key) => key.startsWith(PREFIX) && !KEPT_ON_IMPORT.includes(key))
+        .filter((key) => key.startsWith(PREFIX) && !KEPT_ON_IMPORT.includes(key) && !keptPictures.has(key))
         .forEach((key) => localStorage.removeItem(key));
       oldValues.forEach(([key, value]) => localStorage.setItem(key, value));
     } catch (restoreError) {

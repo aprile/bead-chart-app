@@ -11,9 +11,12 @@
 //
 // If the picture has grid lines (a chart saved as an image, pixel art),
 // "Follow the grid in the picture" is on: the box fits the grid, snaps to
-// whole squares, and each square becomes one bead.
+// whole squares, and each square becomes one bead. "Stretch to the beads'
+// shape" repeats some columns (or rows), spread evenly, so square squares
+// don't come out squashed in beads that aren't square. Typing Columns or Rows
+// there chooses my own stretch.
 
-import { preparePhoto, sampleBeadColors, chartShape, adjustColor, pickColorAt } from './photo-sampling.js';
+import { preparePhoto, sampleBeadColors, stretchColors, chartShape, adjustColor, pickColorAt } from './photo-sampling.js';
 import { findGrid } from './grid-detect.js';
 import { createColorMatcher, chooseColors } from './color-match.js';
 import { rgbToLab, rgbToHex } from './color-math.js';
@@ -28,7 +31,9 @@ const CONTROLS_WIDTH = 320;
 const MAX_BEADS = 1000; // per direction, like the Chart tab
 
 // getChart() → the open chart.
-// onApply(beads, { cols, rows }) → put the new beads in the chart, at that size.
+// onApply(beads, { cols, rows }, picture) → put the new beads in the chart, at that size.
+//   picture = { source, crop, across, down }: the part of the photo in the box
+//   (to keep under the beads), and how many beads wide and tall it covers.
 export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   const dialog = document.querySelector('#photo-dialog');
   const stage = dialog.querySelector('.photo-stage');
@@ -44,6 +49,7 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   const sizeNote = dialog.querySelector('.photo-size-note');
   const gridPanel = dialog.querySelector('.photo-grid');
   const gridNote = dialog.querySelector('.photo-grid-note');
+  const stretchNote = dialog.querySelector('.photo-stretch-note');
 
   let photo = null; // the shrunk photo (a canvas), shown in the stage
   let chart = null; // the open chart, when the dialog was opened
@@ -54,6 +60,7 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   let box = null; // crop box { x, y, w, h } in photo pixels
   let grid = null; // the grid found in the picture (see grid-detect.js), or null
   let gridBox = null; // with the grid followed: the box's edges as line numbers { c0, c1, r0, r1 }
+  let stretch = { x: 1, y: 1 }; // on the grid: beads per square, across and down
 
   let sampled = null; // step 1 result: rows of [r, g, b], one per bead
   let beads = null; // step 2 result: rows of colour ids (or null), ready to apply
@@ -105,7 +112,8 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     grid = findGrid(photo);
     gridPanel.hidden = !grid;
     fields.useGrid.checked = grid !== null;
-    if (grid) gridNote.textContent = `Found ${grid.x.count} × ${grid.y.count} squares. Each square becomes one bead.`;
+    fields.stretchToBeads.checked = true;
+    if (grid) stretch = beadStretch();
 
     size = { cols: chart.cols, rows: chart.rows };
     fields.photoCols.value = size.cols;
@@ -245,12 +253,63 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
       h: (r1 - r0) * grid.y.pitch,
     };
     aspect = box.w / box.h;
-    size = { cols: c1 - c0, rows: r1 - r0 };
+    const squares = boxSquares();
+    size = {
+      cols: clamp(Math.round(squares.cols * stretch.x), 1, MAX_BEADS),
+      rows: clamp(Math.round(squares.rows * stretch.y), 1, MAX_BEADS),
+    };
     // Only change the boxes when they're different, so typing isn't interrupted.
     if (Number(fields.photoCols.value) !== size.cols) fields.photoCols.value = size.cols;
     if (Number(fields.photoRows.value) !== size.rows) fields.photoRows.value = size.rows;
     showSize();
+    showGridNotes();
     renderBox();
+  }
+
+  // How many squares of the grid are in the box.
+  function boxSquares() {
+    return { cols: gridBox.c1 - gridBox.c0, rows: gridBox.r1 - gridBox.r0 };
+  }
+
+  // The stretch that keeps the picture's shape in these beads: the squares'
+  // shape, compared with the beads' shape. Only ever adds beads: columns
+  // when the beads are narrow (loom), rows when they're wide (brick).
+  function beadStretch() {
+    const { columnWidth, rowHeight } = beadSpacing(chart.stitch, chart.beadSize);
+    const ratio = (grid.x.pitch / grid.y.pitch) * (rowHeight / columnWidth);
+    if (Math.abs(ratio - 1) < 0.03) return { x: 1, y: 1 }; // close enough to the same shape
+    return ratio > 1 ? { x: ratio, y: 1 } : { x: 1, y: 1 / ratio };
+  }
+
+  // Does the size match the beads' shape? (Compared as whole beads.)
+  function matchesBeadStretch() {
+    const squares = boxSquares();
+    const bead = beadStretch();
+    return (
+      Math.round(squares.cols * bead.x) === Math.round(squares.cols * stretch.x) &&
+      Math.round(squares.rows * bead.y) === Math.round(squares.rows * stretch.y)
+    );
+  }
+
+  function showGridNotes() {
+    const squares = boxSquares();
+    gridNote.textContent =
+      `Found ${grid.x.count} × ${grid.y.count} squares` +
+      (squares.cols === grid.x.count && squares.rows === grid.y.count ? '.' : `; the box has ${squares.cols} × ${squares.rows}.`);
+    const changes = [];
+    if (size.cols !== squares.cols) changes.push(`${squares.cols} squares → ${size.cols} columns`);
+    if (size.rows !== squares.rows) changes.push(`${squares.rows} squares → ${size.rows} rows`);
+    const beads = `${chart.beadSize} ${getStitch(chart.stitch).label.toLowerCase()}`;
+    if (changes.length === 0) {
+      stretchNote.textContent = fields.stretchToBeads.checked
+        ? `The squares already have the shape of ${beads} beads: one bead per square.`
+        : 'One bead per square.';
+    } else if (fields.stretchToBeads.checked) {
+      const what = size.cols !== squares.cols ? 'columns' : 'rows';
+      stretchNote.textContent = `${changes.join(', ')}: some ${what} are repeated, so the picture keeps its shape in ${beads} beads.`;
+    } else {
+      stretchNote.textContent = `${changes.join(', ')} (your own stretch).`;
+    }
   }
 
   // The box around the whole grid that was found.
@@ -264,19 +323,13 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     applyGridBox();
   }
 
-  // Typing Columns or Rows on the grid: the box becomes that many squares,
-  // keeping its bottom-left corner (where the work starts) if there's room.
+  // Typing Columns or Rows on the grid: my own stretch (beads per square).
+  // The box stays where it is.
   function changeGridSize(changed, value) {
-    const { c0, r1 } = gridBox;
-    if (changed === 'cols') {
-      const { min, max } = lineRange(grid.x, photo.width);
-      const right = Math.min(c0 + value, max);
-      gridBox = { ...gridBox, c0: Math.max(min, right - value), c1: right };
-    } else {
-      const { min, max } = lineRange(grid.y, photo.height);
-      const top = Math.max(min, r1 - value);
-      gridBox = { ...gridBox, r0: top, r1: Math.min(max, top + value) };
-    }
+    const squares = boxSquares();
+    if (changed === 'cols') stretch = { ...stretch, x: value / squares.cols };
+    else stretch = { ...stretch, y: value / squares.rows };
+    fields.stretchToBeads.checked = matchesBeadStretch();
     applyGridBox();
     scheduleUpdate(true);
   }
@@ -308,6 +361,13 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     return true;
   }
 
+  // "Stretch to the beads' shape": on = the beads' stretch; off = one bead per square.
+  function toggleStretch() {
+    stretch = fields.stretchToBeads.checked ? beadStretch() : { x: 1, y: 1 };
+    applyGridBox();
+    scheduleUpdate(true);
+  }
+
   // The switch: on = back to the whole grid; off = a normal photo box with
   // the chart's shape, about the same size and place.
   function toggleGrid() {
@@ -325,6 +385,14 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   function showGridMode() {
     fields.keepShape.disabled = onGrid();
     cropBox.classList.toggle('on-grid', onGrid());
+  }
+
+  // "Keep the box's shape" back on: the box takes the chart's shape again.
+  function keepShapeChanged() {
+    if (onGrid() || !fields.keepShape.checked) return;
+    showSize(); // works out the chart's shape
+    reshapeBox();
+    scheduleUpdate(true);
   }
 
   // ---------- Crop box ----------
@@ -372,6 +440,30 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     return { x: left ? anchorX - w : anchorX, y: top ? anchorY - h : anchorY, w, h };
   }
 
+  // With "Keep the box's shape" off: resize from a corner into any shape.
+  function resizeFreely(corner, start, point) {
+    const left = corner.includes('w');
+    const top = corner.includes('n');
+    const anchorX = left ? start.x + start.w : start.x;
+    const anchorY = top ? start.y + start.h : start.y;
+    const roomX = left ? anchorX : photo.width - anchorX;
+    const roomY = top ? anchorY : photo.height - anchorY;
+    const smallest = 24 / displayScale(); // at least 24 screen pixels each way
+    const w = clamp(Math.abs(point.x - anchorX), Math.min(roomX, smallest), roomX);
+    const h = clamp(Math.abs(point.y - anchorY), Math.min(roomY, smallest), roomY);
+    return { x: left ? anchorX - w : anchorX, y: top ? anchorY - h : anchorY, w, h };
+  }
+
+  // After a free resize, the rows follow the box's new shape (the columns stay).
+  function sizeFollowsBox() {
+    aspect = box.w / box.h;
+    const rows = matchingCount(size.cols, 'cols');
+    if (rows === size.rows) return;
+    size = { ...size, rows };
+    fields.photoRows.value = rows;
+    showSize();
+  }
+
   let drag = null; // { corner (or null to move), start point, start box }
 
   cropBox.addEventListener('pointerdown', (event) => {
@@ -393,7 +485,10 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
       if (dragOnGrid(point) && !slow) scheduleUpdate(true);
       return;
     }
-    if (drag.corner) {
+    if (drag.corner && !fields.keepShape.checked) {
+      box = resizeFreely(drag.corner, drag.startBox, point);
+      sizeFollowsBox();
+    } else if (drag.corner) {
       box = resizeFrom(drag.corner, drag.startBox, point);
     } else {
       const dx = point.x - drag.startPoint.x;
@@ -467,8 +562,9 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     if (event.target.closest('.chosen-colors')) return; // swap menus are handled below
     if (event.target === fields.photoCols) return changeSize('cols');
     if (event.target === fields.photoRows) return changeSize('rows');
-    if (event.target === fields.keepShape) return; // only matters when typing a size
+    if (event.target === fields.keepShape) return keepShapeChanged();
     if (event.target === fields.useGrid) return toggleGrid();
+    if (event.target === fields.stretchToBeads) return toggleStretch();
     if (event.target === fields.onlyStash && fields.onlyStash.checked) {
       // Back to my stash only: forget colours I locked or swapped in from outside it.
       const inStash = new Set(stash.map((color) => color.id));
@@ -582,7 +678,13 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
     // Step 1 (only when the crop box moved): each bead's most common colour.
     if (resample || !sampled) {
       const started = performance.now();
-      sampled = sampleBeadColors(photo, box, target(), { plainGrid: onGrid() });
+      if (onGrid()) {
+        // One colour per square, then repeat squares to the size (the stretch).
+        const squares = sampleBeadColors(photo, box, { ...target(), ...boxSquares() }, { plainGrid: true });
+        sampled = stretchColors(squares, size.cols, size.rows);
+      } else {
+        sampled = sampleBeadColors(photo, box, target());
+      }
       // If this took longer than ~1/25 s, wait until you let go of the box next time.
       slow = performance.now() - started > 40;
     }
@@ -632,7 +734,10 @@ export function setupPhotoImport({ button, fileInput, getChart, onApply }) {
   // ---------- Apply / Cancel ----------
 
   dialog.querySelector('[data-action="apply"]').addEventListener('click', () => {
-    onApply(beads, size);
+    // On the grid, the box is exactly the squares; otherwise it has the chart's
+    // real shape, including the half bead that brick or peyote sticks out.
+    const covers = onGrid() ? { across: size.cols, down: size.rows } : chartShape(target());
+    onApply(beads, size, { source: photo, crop: { ...box }, across: covers.across, down: covers.down });
     dialog.close();
   });
   // Cancel and the × in the corner.
