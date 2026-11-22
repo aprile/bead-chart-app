@@ -34,9 +34,10 @@ import square from './square.js';
 import brick from './brick.js';
 import brick2 from './brick2.js';
 import peyote from './peyote.js';
+import peyote2 from './peyote2.js';
 
 // In the order they're shown in the "Stitch" choice.
-export const STITCHES = [loom, square, brick, brick2, peyote];
+export const STITCHES = [loom, square, brick, brick2, peyote, peyote2];
 
 export function getStitch(id) {
   return STITCHES.find((stitch) => stitch.id === id) ?? null;
