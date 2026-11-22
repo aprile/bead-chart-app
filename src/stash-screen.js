@@ -3,7 +3,7 @@
 // top bar or the palette's "Edit my stash" button).
 
 import {
-  allColors, getColor, BEAD_SIZE_NAMES, FAMILIES, FINISHES,
+  allColors, sortByFamily, getColor, BEAD_SIZE_NAMES, FAMILIES, FINISHES,
   isInStash, setInStash, stashCount,
 } from './colors.js';
 import { setupColorDialogs } from './color-dialogs.js';
@@ -61,7 +61,10 @@ export function setupStashScreen(root, { onClose }) {
   const showing = root.querySelector('#stash-showing');
   const list = root.querySelector('#stash-list');
 
-  familyFilter.insertAdjacentHTML('beforeend', optionsHtml(FAMILIES) + '<option value="custom">custom (my colours)</option>');
+  // The family names A–Z, so a name is easy to find. (The list itself is in
+  // colour order, light to dark, like the palette.)
+  const familyNames = [...FAMILIES].sort((a, b) => a.localeCompare(b));
+  familyFilter.insertAdjacentHTML('beforeend', optionsHtml(familyNames) + '<option value="custom">custom (my colours)</option>');
   finishFilter.insertAdjacentHTML('beforeend', optionsHtml(FINISHES));
 
   // Build all rows at once. Filtering just hides and shows them, which is much
@@ -69,7 +72,7 @@ export function setupStashScreen(root, { onClose }) {
   // is added, edited or deleted.
   let rows = [];
   function renderList() {
-    const colors = allColors();
+    const colors = sortByFamily(allColors()); // by colour family, like the palette
     list.innerHTML = colors.map(rowHtml).join('');
     rows = colors.map((color, i) => ({ color, element: list.children[i] }));
   }
