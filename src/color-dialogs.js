@@ -1,11 +1,12 @@
 // The pop-up forms on the stash screen:
 // - add / edit a custom colour (and delete it)
-// - edit the screen colour of a Miyuki colour
+// - edit the screen colour and colour family of a Miyuki colour
 // - confirm a delete, choosing what replaces that colour's beads in the chart
 
 import {
   addCustomColor, updateCustomColor, deleteCustomColor,
   setColorOverride, resetColorOverride, estimatedHex,
+  setFamilyOverride, originalFamily, FAMILY_NAMES,
   stashColors, colorLabel,
 } from './colors.js';
 import { nearestColor } from './color-math.js';
@@ -34,6 +35,10 @@ export function setupColorDialogs(onChange) {
   const customDialog = document.querySelector('#custom-color-dialog');
   const customForm = customDialog.querySelector('form');
   const customFields = customForm.elements;
+  // Colour family: none (the colour stays under "My colours"), or one A–Z.
+  customFields.family.innerHTML =
+    '<option value="">None (under My colours)</option>' +
+    FAMILY_NAMES.map((family) => `<option value="${escapeHtml(family)}">${escapeHtml(family)}</option>`).join('');
   const customError = customForm.querySelector('.form-error');
   const deleteButton = customForm.querySelector('[data-action="delete"]');
   let editingColor = null; // null = adding a new colour
@@ -49,6 +54,7 @@ export function setupColorDialogs(onChange) {
       customFields.hex.value = color.hex;
       customFields.code.value = color.code ?? '';
       customFields.notes.value = color.notes ?? '';
+      customFields.family.value = color.family ?? '';
     }
     // Tick the colour's sizes (or 11/0 for a new colour, as a starting point).
     const sizes = color ? color.sizes : ['11/0'];
@@ -69,6 +75,7 @@ export function setupColorDialogs(onChange) {
       sizes,
       code: customFields.code.value,
       notes: customFields.notes.value,
+      family: customFields.family.value,
     };
     if (editingColor) updateCustomColor(editingColor.id, fields);
     else addCustomColor(fields);
@@ -86,9 +93,10 @@ export function setupColorDialogs(onChange) {
     confirmDelete(editingColor);
   });
 
-  // ---------- Edit a Miyuki colour's screen colour ----------
+  // ---------- Edit a Miyuki colour's screen colour and family ----------
   const screenDialog = document.querySelector('#screen-color-dialog');
   const screenForm = screenDialog.querySelector('form');
+  const familySelect = screenForm.elements.family;
   let screenColor = null;
 
   function openScreenColor(color) {
@@ -96,6 +104,13 @@ export function setupColorDialogs(onChange) {
     const estimated = estimatedHex(color.id);
     screenForm.querySelector('.dialog-color-name').textContent = colorLabel(color);
     screenForm.elements.hex.value = color.hex;
+    // The families A–Z; the one from the Miyuki list is marked.
+    const original = originalFamily(color.id);
+    familySelect.innerHTML = FAMILY_NAMES.map(
+      (family) =>
+        `<option value="${escapeHtml(family)}">${escapeHtml(family)}${family === original ? ' (Miyuki)' : ''}</option>`,
+    ).join('');
+    familySelect.value = color.family;
     screenForm.querySelector('.estimated-swatch').style.background = estimated;
     screenForm.querySelector('.estimated-hex').textContent = estimated;
     screenForm.querySelector('[data-action="reset"]').disabled = !color.edited;
@@ -108,6 +123,7 @@ export function setupColorDialogs(onChange) {
     // Picking exactly the estimate is the same as resetting.
     if (hex === estimatedHex(screenColor.id)) resetColorOverride(screenColor.id);
     else setColorOverride(screenColor.id, hex);
+    setFamilyOverride(screenColor.id, familySelect.value); // the Miyuki family again = no change saved
     screenDialog.close();
     onChange();
   });

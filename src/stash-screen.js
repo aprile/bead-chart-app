@@ -3,7 +3,7 @@
 // top bar or the palette's "Edit my stash" button).
 
 import {
-  allColors, sortByFamily, getColor, BEAD_SIZE_NAMES, FAMILIES, FINISHES,
+  allColors, sortByCode, getColor, BEAD_SIZE_NAMES, FAMILY_NAMES, FINISHES,
   isInStash, setInStash, stashCount,
 } from './colors.js';
 import { setupColorDialogs } from './color-dialogs.js';
@@ -24,11 +24,12 @@ function rowHtml(color) {
     )
     .join('');
 
-  // Small grey line under the name: finish for Miyuki colours, notes for custom ones.
-  const details = color.custom ? color.notes ?? '' : color.finish.join(', ');
+  // Small grey line under the name: the colour family, then the finish for
+  // Miyuki colours or the notes for custom ones.
+  const details = [color.family, color.custom ? color.notes : color.finish.join(', ')].filter(Boolean).join(' · ');
   const badges = [
     color.custom && '<span class="badge" data-variant="secondary">custom</span>',
-    color.edited && '<span class="badge" data-variant="outline">edited</span>',
+    (color.edited || color.familyEdited) && '<span class="badge" data-variant="outline">edited</span>',
   ]
     .filter(Boolean)
     .join(' ');
@@ -61,10 +62,8 @@ export function setupStashScreen(root, { onClose }) {
   const showing = root.querySelector('#stash-showing');
   const list = root.querySelector('#stash-list');
 
-  // The family names A–Z, so a name is easy to find. (The list itself is in
-  // colour order, light to dark, like the palette.)
-  const familyNames = [...FAMILIES].sort((a, b) => a.localeCompare(b));
-  familyFilter.insertAdjacentHTML('beforeend', optionsHtml(familyNames) + '<option value="custom">custom (my colours)</option>');
+  // The family names A–Z, so a name is easy to find. (The list is by colour code.)
+  familyFilter.insertAdjacentHTML('beforeend', optionsHtml(FAMILY_NAMES) + '<option value="custom">custom (my colours)</option>');
   finishFilter.insertAdjacentHTML('beforeend', optionsHtml(FINISHES));
 
   // Build all rows at once. Filtering just hides and shows them, which is much
@@ -72,7 +71,7 @@ export function setupStashScreen(root, { onClose }) {
   // is added, edited or deleted.
   let rows = [];
   function renderList() {
-    const colors = sortByFamily(allColors()); // by colour family, like the palette
+    const colors = sortByCode(allColors()); // by colour code, my custom colours first
     list.innerHTML = colors.map(rowHtml).join('');
     rows = colors.map((color, i) => ({ color, element: list.children[i] }));
   }

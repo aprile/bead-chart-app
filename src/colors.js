@@ -14,8 +14,14 @@ const MIYUKI_COLORS = data.colors;
 
 const overrides = load(STORAGE_KEYS.overrides) ?? {};
 
+// ---- Colour family changes for Miyuki colours ----
+// Saved shape: { "miyuki-401": "black", ... } (only the ones I changed)
+
+const familyOverrides = load(STORAGE_KEYS.familyOverrides) ?? {};
+
 // ---- Custom colours ----
-// Saved shape: { nextNumber: 3, colors: [{ id: "custom-1", name, hex, sizes, code?, notes?, custom: true }] }
+// Saved shape: { nextNumber: 3, colors: [{ id: "custom-1", name, hex, sizes, code?, notes?, family?, custom: true }] }
+// family: optional; without one, a custom colour goes under "My colours".
 // nextNumber only ever goes up, so a deleted colour's id is never reused.
 
 const custom = loadCustomColors();
@@ -28,7 +34,8 @@ function loadCustomColors() {
 }
 
 // ---- Looking colours up ----
-// One Map from id → colour (with my screen-colour edit applied, if any).
+// One Map from id → colour (with my screen-colour and family edits applied).
+// edited: I changed its screen colour. familyEdited: I changed its family.
 // Rebuilt whenever something changes, so lookups while drawing stay quick.
 
 const colorsById = new Map();
@@ -36,8 +43,12 @@ const colorsById = new Map();
 function rebuildLookup() {
   colorsById.clear();
   for (const color of MIYUKI_COLORS) {
+    let mine = color;
     const hex = overrides[color.id];
-    colorsById.set(color.id, hex ? { ...color, hex, edited: true } : color);
+    if (hex) mine = { ...mine, hex, edited: true };
+    const family = familyOverrides[color.id];
+    if (family) mine = { ...mine, family, familyEdited: true };
+    colorsById.set(color.id, mine);
   }
   for (const color of custom.colors) colorsById.set(color.id, color);
 }
@@ -89,10 +100,24 @@ export function resetColorOverride(id) {
   rebuildLookup();
 }
 
+// The family a Miyuki colour has in the Miyuki list (before my change).
+export function originalFamily(id) {
+  return MIYUKI_COLORS.find((color) => color.id === id)?.family;
+}
+
+// Change a Miyuki colour's family. Choosing its original family again
+// removes my change.
+export function setFamilyOverride(id, family) {
+  if (!family || family === originalFamily(id)) delete familyOverrides[id];
+  else familyOverrides[id] = family;
+  save(STORAGE_KEYS.familyOverrides, familyOverrides);
+  rebuildLookup();
+}
+
 // ---- Adding, editing and deleting custom colours ----
 
 // Tidy up what the form gave us into the shape from PLAN.md.
-function cleanCustomColor(id, { name, hex, sizes, code, notes }) {
+function cleanCustomColor(id, { name, hex, sizes, code, notes, family }) {
   const color = {
     id,
     name: name.trim(),
@@ -102,6 +127,7 @@ function cleanCustomColor(id, { name, hex, sizes, code, notes }) {
   };
   if (code?.trim()) color.code = code.trim();
   if (notes?.trim()) color.notes = notes.trim();
+  if (family) color.family = family;
   return color;
 }
 
@@ -164,6 +190,9 @@ export const FAMILIES = [
   ...[...familiesInData].filter((family) => !FAMILY_ORDER.includes(family)).sort(),
 ];
 
+// The family names A–Z, for choosing one (filters, edit forms).
+export const FAMILY_NAMES = [...FAMILIES].sort((a, b) => a.localeCompare(b));
+
 export const FINISHES = [...new Set(MIYUKI_COLORS.flatMap((color) => color.finish))].sort();
 
 // Codes sort by their number first, so 2 comes before 10, and 1 before 1F.
@@ -171,17 +200,46 @@ function compareCodes(a, b) {
   return parseInt(a.code, 10) - parseInt(b.code, 10) || a.code.localeCompare(b.code);
 }
 
-// Custom colours have no family, so they go after all the families.
+// Custom colours without a family go after all the families.
 function familyRank(color) {
-  return color.custom ? FAMILIES.length : FAMILIES.indexOf(color.family);
+  const rank = color.family ? FAMILIES.indexOf(color.family) : -1;
+  return rank === -1 ? FAMILIES.length : rank;
 }
 
+// By family; inside a family, Miyuki colours by code, then my custom colours by name.
 export function sortByFamily(colors) {
   return [...colors].sort((a, b) => {
     const byFamily = familyRank(a) - familyRank(b);
     if (byFamily !== 0) return byFamily;
+    if (a.custom !== b.custom) return a.custom ? 1 : -1;
     if (a.custom) return a.name.localeCompare(b.name);
     return compareCodes(a, b);
+  });
+}
+
+// By colour code, as a number (1, 2, 4, 10, 401, 4201…). My custom colours
+// are mixed in by their code too. In order:
+// 1. colours with no code (my custom colours without one), by name;
+// 2. codes starting with a number, by that number (2 before 10, 1 before 1F);
+// 3. codes starting with letters (e.g. another brand's "DB-010"), A–Z.
+// With the same code, the Miyuki colour comes before mine.
+function codeGroup(color) {
+  if (!color.code) return 0;
+  return Number.isNaN(parseInt(color.code, 10)) ? 2 : 1;
+}
+
+export function sortByCode(colors) {
+  return [...colors].sort((a, b) => {
+    const group = codeGroup(a) - codeGroup(b);
+    if (group !== 0) return group;
+    if (codeGroup(a) === 0) return a.name.localeCompare(b.name);
+    const byCode =
+      codeGroup(a) === 1
+        ? compareCodes(a, b)
+        : a.code.localeCompare(b.code, undefined, { numeric: true, sensitivity: 'base' });
+    if (byCode !== 0) return byCode;
+    if (a.custom !== b.custom) return a.custom ? 1 : -1;
+    return a.name.localeCompare(b.name);
   });
 }
 

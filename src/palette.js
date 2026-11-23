@@ -1,14 +1,14 @@
 // The palette (right panel): the colours I can paint with, in the chart's bead size.
-// - "My stash": just my stash colours (the usual view), in sections by
-//   colour family (beige, black, blue… A–Z), which can be folded away.
+// - "My stash": just my stash colours (the usual view), in one grid by colour
+//   code (my custom colours first).
 // - "All colours": every colour made in that bead size (Miyuki and my custom
 //   ones), with a ✓ on the ones in my stash, and a search box. They're in
 //   sections by finish (opaque, silver lined…), which can be folded away.
-// My custom colours have no family or finish: they're in "My colours", first.
+// My custom colours have no finish: they're in "My colours", first.
 // Clicking a colour chooses it for the brush. Hovering shows its name.
 // Which view is showing, and which sections are folded, is remembered.
 
-import { getColor, stashColors, allColors, sortByFamily, colorLabel, isInStash, setInStash } from './colors.js';
+import { getColor, stashColors, allColors, sortByFamily, sortByCode, colorLabel, isInStash, setInStash } from './colors.js';
 import { load, save, STORAGE_KEYS } from './storage.js';
 import { escapeHtml } from './html.js';
 import { setupTooltips } from './tooltip.js';
@@ -22,31 +22,22 @@ const FINISH_ORDER = [
 ];
 const MY_COLOURS = 'my colours'; // the section for my custom colours (first)
 
-// Family sections get keys like "family:blue", so folding "other" in one
-// view doesn't fold it in the other.
-const FAMILY_KEY = 'family:';
-
-// "silver lined" → "Silver lined", "family:blue" → "Blue"
+// "silver lined" → "Silver lined"
 function sectionTitle(key) {
-  const name = key.startsWith(FAMILY_KEY) ? key.slice(FAMILY_KEY.length) : key;
-  return name.charAt(0).toUpperCase() + name.slice(1);
+  return key.charAt(0).toUpperCase() + key.slice(1);
 }
 
-// The colours in sections: [{ key, colors }], my colours first.
-// groupBy 'finish': by main finish, in FINISH_ORDER. 'family': by colour family, A–Z.
-// Inside a section the colours keep the order they came in.
-function bySection(colors, groupBy) {
+// The colours in sections by main finish: [{ key, colors }] in FINISH_ORDER,
+// my colours first. Inside a section the colours keep the order they came in.
+function bySection(colors) {
   const sections = new Map();
   for (const color of colors) {
-    let key;
-    if (groupBy === 'family') key = FAMILY_KEY + (color.custom ? MY_COLOURS : color.family ?? 'other');
-    else key = color.custom ? MY_COLOURS : color.finish?.[0] ?? 'other';
+    const key = color.custom ? MY_COLOURS : color.finish?.[0] ?? 'other';
     if (!sections.has(key)) sections.set(key, []);
     sections.get(key).push(color);
   }
   const rank = (key) => {
-    if (key === MY_COLOURS || key === FAMILY_KEY + MY_COLOURS) return -1;
-    if (groupBy === 'family') return 0; // then A–Z below
+    if (key === MY_COLOURS) return -1;
     const index = FINISH_ORDER.indexOf(key);
     return index === -1 ? FINISH_ORDER.length : index;
   };
@@ -104,7 +95,7 @@ export function setupPalette(container, { onSelect, onPick, onStashChange }) {
 
   // The colours for the current view and bead size.
   function colorsFor(size) {
-    if (mode === 'stash') return stashColors(size);
+    if (mode === 'stash') return sortByCode(stashColors(size));
     return sortByFamily(allColors().filter((color) => color.sizes.includes(size)));
   }
 
@@ -120,12 +111,11 @@ export function setupPalette(container, { onSelect, onPick, onStashChange }) {
       style="--swatch: ${escapeHtml(color.hex)}" data-tip="${label}" aria-label="${label}"></button>`;
   }
 
-  // Foldable sections: per finish ("All colours") or per colour family ("My stash").
+  // "All colours": one foldable section per finish.
   function sectionsHtml(shown) {
-    return bySection(shown, mode === 'all' ? 'finish' : 'family')
+    return bySection(shown)
       .map(({ key, colors: list }) => {
-        // In "My stash" every colour is in my stash, so there's no need to say so.
-        const owned = mode === 'all' ? list.filter((color) => isInStash(color.id, beadSize)).length : 0;
+        const owned = list.filter((color) => isInStash(color.id, beadSize)).length;
         const open = searching || !folded.has(key);
         return `
           <details class="palette-section" data-section="${escapeHtml(key)}" ${open ? 'open' : ''}>
@@ -153,8 +143,10 @@ export function setupPalette(container, { onSelect, onPick, onStashChange }) {
         </p>`;
     } else if (shown.length === 0) {
       swatches.innerHTML = `<p class="palette-empty">No colours match “${escapeHtml(search.value)}”.</p>`;
-    } else {
+    } else if (mode === 'all') {
       swatches.innerHTML = sectionsHtml(shown);
+    } else {
+      swatches.innerHTML = `<div class="swatch-grid">${shown.map(swatchHtml).join('')}</div>`;
     }
   }
 

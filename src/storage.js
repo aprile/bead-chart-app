@@ -16,6 +16,7 @@ export const STORAGE_KEYS = {
   stash: `${PREFIX}stash`,
   customColors: `${PREFIX}customColors`,
   overrides: `${PREFIX}colorOverrides`,
+  familyOverrides: `${PREFIX}familyOverrides`, // my colour family changes for Miyuki colours
   calibration: `${PREFIX}calibration`,
   lastChoices: `${PREFIX}lastChoices`,
   view: `${PREFIX}view`, // zoom, grid lines, numbers
@@ -143,6 +144,11 @@ export function isValidOverrides(overrides) {
   return isObject(overrides) && Object.values(overrides).every((hex) => HEX.test(hex));
 }
 
+// My colour family changes: { "miyuki-401": "black", … }
+export function isValidFamilyOverrides(families) {
+  return isObject(families) && Object.values(families).every((family) => typeof family === 'string' && family !== '');
+}
+
 // ---------- Saved charts ----------
 
 // All saved charts, most recently changed first.
@@ -244,6 +250,7 @@ export function makeBackup() {
     stash: load(STORAGE_KEYS.stash) ?? {},
     customColors: load(STORAGE_KEYS.customColors) ?? { nextNumber: 1, colors: [] },
     colorOverrides: load(STORAGE_KEYS.overrides) ?? {},
+    familyOverrides: load(STORAGE_KEYS.familyOverrides) ?? {},
     calibration: load(STORAGE_KEYS.calibration) ?? [],
   };
 }
@@ -279,6 +286,7 @@ export function describeData(data) {
     `${plural(stashTotal, 'stash colour')} (${perSize})`,
     plural(data.customColors.colors.length, 'custom colour'),
     plural(Object.keys(data.colorOverrides).length, 'colour edit'),
+    plural(Object.keys(data.familyOverrides ?? {}).length, 'family change'),
     plural(data.calibration?.length ?? 0, 'calibration'),
   ].join(', ');
 }
@@ -304,7 +312,10 @@ export function checkBackup(data) {
   if (!isValidStash(data.stash)) return { ok: false, error: 'The stash in the backup is damaged.' };
   if (!isValidCustomColors(data.customColors)) return { ok: false, error: 'The custom colours in the backup are damaged.' };
   if (!isValidOverrides(data.colorOverrides)) return { ok: false, error: 'The colour edits in the backup are damaged.' };
-  // Older backups have no calibration: that's fine.
+  // Older backups have no family changes or calibration: that's fine.
+  if (data.familyOverrides !== undefined && !isValidFamilyOverrides(data.familyOverrides)) {
+    return { ok: false, error: 'The colour family changes in the backup are damaged.' };
+  }
   if (data.calibration !== undefined && !isValidCalibrationList(data.calibration)) {
     return { ok: false, error: 'The calibration in the backup is damaged.' };
   }
@@ -332,6 +343,7 @@ export function restoreBackup(data) {
     localStorage.setItem(STORAGE_KEYS.stash, JSON.stringify(data.stash));
     localStorage.setItem(STORAGE_KEYS.customColors, JSON.stringify(data.customColors));
     localStorage.setItem(STORAGE_KEYS.overrides, JSON.stringify(data.colorOverrides));
+    localStorage.setItem(STORAGE_KEYS.familyOverrides, JSON.stringify(data.familyOverrides ?? {}));
     localStorage.setItem(STORAGE_KEYS.calibration, JSON.stringify(data.calibration ?? []));
     const current = data.charts.some((chart) => chart.id === data.currentChartId)
       ? data.currentChartId

@@ -115,7 +115,8 @@ export function importChartFile(data) {
     if (mine) {
       newIds.set(color.id, mine.id);
     } else {
-      const added = addCustomColor({ name: color.name, hex: color.hex, sizes: color.sizes, code: color.code, notes: color.notes });
+      const family = typeof color.family === 'string' ? color.family : undefined;
+      const added = addCustomColor({ name: color.name, hex: color.hex, sizes: color.sizes, code: color.code, notes: color.notes, family });
       newIds.set(color.id, added.id);
       addedColors++;
     }

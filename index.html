@@ -700,6 +700,10 @@
             </div>
           </fieldset>
           <div class="field">
+            <label for="custom-family">Colour family</label>
+            <select id="custom-family" name="family"></select>
+          </div>
+          <div class="field">
             <label for="custom-code">Code (optional)</label>
             <input type="text" id="custom-code" name="code" maxlength="20" />
           </div>
@@ -720,7 +724,7 @@
     <dialog id="screen-color-dialog" class="dialog color-dialog" aria-labelledby="screen-color-title">
       <form class="form">
         <header>
-          <h2 id="screen-color-title">Edit screen colour</h2>
+          <h2 id="screen-color-title">Edit colour</h2>
           <p class="dialog-color-name"></p>
         </header>
         <section class="color-form-fields">
@@ -737,9 +741,13 @@
             Estimated colour: <span class="swatch-inline estimated-swatch"></span>
             <span class="estimated-hex"></span>
           </p>
+          <div class="field">
+            <label for="screen-family">Colour family</label>
+            <select id="screen-family" name="family"></select>
+          </div>
         </section>
         <footer>
-          <button type="button" class="btn delete-left" data-variant="ghost" data-action="reset">Reset to estimated</button>
+          <button type="button" class="btn delete-left" data-variant="ghost" data-action="reset">Reset screen colour</button>
           <button type="button" class="btn" data-variant="outline" data-action="cancel">Cancel</button>
           <button type="submit" class="btn">Save</button>
         </footer>
